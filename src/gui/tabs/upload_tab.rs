@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;
 use bytes::Bytes;
 use chrono::{DateTime, Local};
-use std::collections::HashMap;
 
 #[derive(Clone)]
 struct UploadRecord {

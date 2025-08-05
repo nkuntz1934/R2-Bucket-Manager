@@ -24,7 +24,9 @@ pub struct BucketTab {
     bucket_state: Arc<Mutex<BucketState>>,
     selected_objects: Vec<String>,
     filter_prefix: String,
+    folder_to_delete: String,
     needs_refresh: bool,
+    delete_in_progress: Arc<Mutex<bool>>,
 }
 
 impl BucketTab {
@@ -35,7 +37,9 @@ impl BucketTab {
             bucket_state: Arc::new(Mutex::new(BucketState::default())),
             selected_objects: Vec::new(),
             filter_prefix: String::new(),
+            folder_to_delete: String::new(),
             needs_refresh: true,
+            delete_in_progress: Arc::new(Mutex::new(false)),
         }
     }
     
@@ -100,6 +104,66 @@ impl BucketTab {
         }
         
         ui.add_space(10.0);
+        
+        // Folder deletion section
+        ui.separator();
+        ui.collapsing("🗂️ Folder Operations", |ui| {
+            // Extract folders from current objects
+            let mut folders = std::collections::HashSet::new();
+            for obj in &state.objects {
+                if let Some(pos) = obj.key.rfind('/') {
+                    let folder = &obj.key[..=pos];
+                    // Add all parent folders
+                    let parts: Vec<&str> = folder.split('/').filter(|s| !s.is_empty()).collect();
+                    for i in 1..=parts.len() {
+                        let partial = parts[..i].join("/") + "/";
+                        folders.insert(partial);
+                    }
+                }
+            }
+            let mut folder_list: Vec<String> = folders.into_iter().collect();
+            folder_list.sort();
+            
+            if !folder_list.is_empty() {
+                ui.label("Select folder to delete:");
+                
+                egui::ScrollArea::vertical()
+                    .max_height(150.0)
+                    .show(ui, |ui| {
+                        for folder in &folder_list {
+                            if ui.selectable_label(
+                                self.folder_to_delete == *folder,
+                                format!("📁 {}", folder)
+                            ).clicked() {
+                                self.folder_to_delete = folder.clone();
+                            }
+                        }
+                    });
+                
+                ui.separator();
+            }
+            
+            ui.horizontal(|ui| {
+                ui.label("Or enter folder prefix manually:");
+                ui.text_edit_singleline(&mut self.folder_to_delete);
+            });
+            
+            let is_deleting = *self.delete_in_progress.lock().unwrap();
+            if is_deleting {
+                ui.spinner();
+                ui.label("Deleting folder contents...");
+                ctx.request_repaint_after(std::time::Duration::from_millis(100));
+            } else {
+                let can_delete = !self.folder_to_delete.is_empty();
+                if ui.add_enabled(can_delete, egui::Button::new("🗑️ Delete Entire Folder"))
+                    .on_hover_text("⚠️ This will delete ALL files with this prefix!")
+                    .clicked() 
+                {
+                    self.delete_folder(ctx);
+                }
+            }
+        });
+        ui.separator();
         
         ui.label(format!("Total objects: {}", state.objects.len()));
         
@@ -221,6 +285,91 @@ impl BucketTab {
                 state.loading = false;
                 
                 // Request UI update
+                ctx.request_repaint();
+            });
+        });
+    }
+    
+    fn delete_folder(&mut self, ctx: &egui::Context) {
+        if self.folder_to_delete.is_empty() {
+            return;
+        }
+        
+        // Check if already deleting
+        {
+            let mut deleting = self.delete_in_progress.lock().unwrap();
+            if *deleting {
+                return;
+            }
+            *deleting = true;
+        }
+        
+        let app_state = self.state.clone();
+        let runtime = self.runtime.clone();
+        let bucket_state = self.bucket_state.clone();
+        let folder_prefix = self.folder_to_delete.clone();
+        let ctx = ctx.clone();
+        let delete_in_progress = self.delete_in_progress.clone();
+        
+        std::thread::spawn(move || {
+            runtime.block_on(async {
+                // First, list all objects with the prefix
+                let objects_to_delete = async {
+                    let client = app_state.lock().unwrap().r2_client.clone()
+                        .ok_or_else(|| anyhow::anyhow!("No R2 client available"))?;
+                    
+                    let objects = client.list_objects(Some(&folder_prefix)).await?;
+                    Ok::<Vec<String>, anyhow::Error>(objects)
+                }.await;
+                
+                match objects_to_delete {
+                    Ok(objects) => {
+                        let total = objects.len();
+                        let mut deleted = 0;
+                        let mut failed = 0;
+                        
+                        // Update status
+                        {
+                            let mut app = app_state.lock().unwrap();
+                            app.status_message = format!("Deleting {} objects from folder '{}'...", total, folder_prefix);
+                        }
+                        
+                        // Delete each object
+                        for key in objects {
+                            if let Some(client) = app_state.lock().unwrap().r2_client.clone() {
+                                match client.delete_object(&key).await {
+                                    Ok(_) => {
+                                        deleted += 1;
+                                        // Remove from bucket state
+                                        let mut state = bucket_state.lock().unwrap();
+                                        state.objects.retain(|obj| obj.key != key);
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to delete {}: {}", key, e);
+                                        failed += 1;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Update final status
+                        {
+                            let mut app = app_state.lock().unwrap();
+                            if failed == 0 {
+                                app.status_message = format!("✓ Deleted {} objects from folder '{}'", deleted, folder_prefix);
+                            } else {
+                                app.status_message = format!("Deleted {} objects, {} failed from folder '{}'", 
+                                                           deleted, failed, folder_prefix);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        let mut app = app_state.lock().unwrap();
+                        app.status_message = format!("✗ Failed to list folder contents: {}", e);
+                    }
+                }
+                
+                *delete_in_progress.lock().unwrap() = false;
                 ctx.request_repaint();
             });
         });

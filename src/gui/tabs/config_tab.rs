@@ -1,6 +1,6 @@
 use crate::app::AppState;
 use eframe::egui;
-use rust_r2::{config, r2_client};
+use rust_r2;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
