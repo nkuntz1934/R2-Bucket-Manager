@@ -73,6 +73,7 @@ impl Config {
         })
     }
 
+    #[allow(dead_code)]
     pub fn save_to_file(&self, path: &Path) -> Result<()> {
         let content = serde_json::to_string_pretty(self)
             .context("Failed to serialize config")?;

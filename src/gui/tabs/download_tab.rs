@@ -30,6 +30,7 @@ struct FolderObject {
 #[derive(Clone)]
 struct DownloadRecord {
     object_key: String,
+    #[allow(dead_code)]
     save_path: String,
     decrypted: bool,
     timestamp: chrono::DateTime<chrono::Local>,

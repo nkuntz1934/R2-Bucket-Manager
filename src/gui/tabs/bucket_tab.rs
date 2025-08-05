@@ -6,7 +6,9 @@ use tokio::runtime::Runtime;
 #[derive(Clone)]
 pub struct BucketObject {
     pub key: String,
+    #[allow(dead_code)]
     pub size: Option<usize>,
+    #[allow(dead_code)]
     pub last_modified: Option<String>,
 }
 

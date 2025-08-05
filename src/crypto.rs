@@ -26,7 +26,7 @@ impl PgpHandler {
     }
 
     pub fn load_secret_key(&mut self, key_data: &[u8], passphrase: Option<&str>) -> Result<()> {
-        let (mut secret_key, _) = SignedSecretKey::from_armor_single(Cursor::new(key_data))
+        let (secret_key, _) = SignedSecretKey::from_armor_single(Cursor::new(key_data))
             .context("Failed to parse secret key")?;
         
         if let Some(pass) = passphrase {
@@ -77,6 +77,7 @@ impl PgpHandler {
         Ok(content.clone())
     }
 
+    #[allow(dead_code)]
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>> {
         let secret_key = self.secret_key.as_ref()
             .context("No secret key loaded for signing")?;
@@ -97,6 +98,7 @@ impl PgpHandler {
         Ok(output)
     }
 
+    #[allow(dead_code)]
     pub fn verify(&self, signed_data: &[u8]) -> Result<Vec<u8>> {
         let public_key = self.public_key.as_ref()
             .context("No public key loaded for verification")?;

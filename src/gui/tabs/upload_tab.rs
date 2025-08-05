@@ -9,6 +9,7 @@ use chrono::{DateTime, Local};
 #[derive(Clone)]
 struct UploadRecord {
     object_key: String,
+    #[allow(dead_code)]
     file_path: String,
     encrypted: bool,
     timestamp: DateTime<Local>,

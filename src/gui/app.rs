@@ -35,6 +35,7 @@ enum Tab {
 
 pub struct R2App {
     state: Arc<Mutex<AppState>>,
+    #[allow(dead_code)]
     runtime: Arc<Runtime>,
     active_tab: Tab,
     config_tab: ConfigTab,

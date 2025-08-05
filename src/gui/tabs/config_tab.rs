@@ -118,7 +118,6 @@ impl ConfigTab {
             ui.add_space(5.0);
             
             // PGP Status
-            let state = self.state.lock().unwrap();
             if !self.public_key_path.is_empty() && !self.secret_key_path.is_empty() {
                 ui.colored_label(egui::Color32::GREEN, "✓ PGP keys configured");
             } else if !self.public_key_path.is_empty() || !self.secret_key_path.is_empty() {
