@@ -1,6 +1,35 @@
 # Rust R2 Tool
 
+[![Release](https://img.shields.io/github/v/release/yourusername/rust-r2)](https://github.com/yourusername/rust-r2/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build](https://github.com/yourusername/rust-r2/actions/workflows/release.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions)
+
 A cross-platform desktop application and CLI tool for managing Cloudflare R2 storage with OpenPGP encryption/decryption support.
+
+## Download
+
+Download the latest release for your platform:
+
+| Platform | Download |
+|----------|----------|
+| **Windows** | [Download (.zip)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-Windows-x86_64.zip) |
+| **macOS Intel** | [Download (.tar.gz)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-macOS-x86_64.tar.gz) |
+| **macOS Apple Silicon** | [Download (.tar.gz)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-macOS-aarch64.tar.gz) |
+| **Linux** | [Download (.tar.gz)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-Linux-x86_64.tar.gz) |
+
+Or build from source - see [Installation Guide](docs/INSTALLATION.md)
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Quick Start](docs/QUICK_START.md) | Get up and running quickly |
+| [Installation](docs/INSTALLATION.md) | Detailed installation instructions |
+| [Configuration](docs/CONFIGURATION.md) | Set up R2 credentials and PGP keys |
+| [User Guide](docs/USER_GUIDE.md) | Complete usage documentation |
+| [CLI Reference](docs/CLI_REFERENCE.md) | Command-line interface documentation |
+| [Contributing](CONTRIBUTING.md) | How to contribute to the project |
+| [Security](SECURITY.md) | Security policy and best practices |
 
 ## Features
 
@@ -8,6 +37,7 @@ A cross-platform desktop application and CLI tool for managing Cloudflare R2 sto
 - **CLI Tool** - Command-line interface for automation and scripting
 - **R2 Storage** - Full support for Cloudflare R2 (S3-compatible)
 - **OpenPGP Encryption** - Encrypt files before upload, decrypt after download
+- **Folder Upload** - Upload entire folders with structure preservation
 - **Bucket Management** - List, upload, download, and delete objects
 - **Fast & Efficient** - Built with Rust for optimal performance
 - **Auto-refresh** - Automatic content loading in all GUI tabs
@@ -214,9 +244,18 @@ export R2_BUCKET_NAME="your_bucket_name"
    - Shows last refresh time
 
 4. **Upload Tab:**
-   - Browse and select files to upload
-   - Optional PGP encryption before upload
-   - Progress bar with percentage
+   - **Single File Mode:**
+     - Browse and select individual files
+     - Set custom object key
+     - Optional PGP encryption
+   - **Folder Mode:**
+     - Browse and select entire folders
+     - Preview folder contents with file sizes
+     - Filter files by name
+     - Select/deselect individual files
+     - Batch encrypt all files
+     - Preserves folder structure in R2
+   - Progress bar with current file and percentage
    - Recent uploads history showing:
      - Timestamp
      - Object key
@@ -317,8 +356,10 @@ done
 - **Visual Feedback**: Spinners and progress bars for all operations
 - **Status Messages**: Clear success/error indicators
 - **Upload History**: Track last 50 uploads with details
-- **Batch Operations**: Select multiple objects for deletion
-- **Quick Actions**: Copy object keys, clear selections
+- **Folder Upload**: Upload entire directories with structure preservation
+- **File Browser**: Browse and filter folder contents before upload
+- **Batch Operations**: Select multiple objects for deletion or upload
+- **Quick Actions**: Copy object keys, clear selections, select/deselect all
 - **Unified Configuration**: All settings (R2 and PGP) in single Config tab
 - **PGP Status Indicator**: Shows encryption readiness in header
 
@@ -478,6 +519,14 @@ For issues, questions, or feature requests, please open an issue on GitHub.
 ## Changelog
 
 ### Latest Version
+- **New Feature: Folder Upload**
+  - Upload entire folders while preserving directory structure
+  - Browse and preview folder contents before upload
+  - Filter files by name
+  - Select/deselect individual files or all at once
+  - Batch encrypt all files in folder
+  - Progress tracking shows current file being uploaded
+  - Recursive folder scanning (skips hidden directories)
 - Consolidated PGP configuration into main Config tab (removed separate PGP tab)
 - Fixed Office document (.docx, .xlsx, .pptx) encryption/decryption
 - Enhanced recent uploads display with better UI refresh logic

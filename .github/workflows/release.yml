@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build - ${{ matrix.platform.release_for }}
+    strategy:
+      matrix:
+        platform:
+          - release_for: Windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            command: build
+
+          - release_for: macOS-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            command: build
+
+          - release_for: macOS-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            command: build
+
+          - release_for: Linux-x86_64
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            command: build
+
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.platform.os == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+
+      - name: Build
+        run: |
+          cargo build --release --target ${{ matrix.platform.target }}
+
+      - name: Prepare binaries (Windows)
+        if: matrix.platform.os == 'windows-latest'
+        run: |
+          mkdir release
+          copy target\${{ matrix.platform.target }}\release\rust-r2-cli.exe release\
+          copy target\${{ matrix.platform.target }}\release\rust-r2-gui.exe release\
+          Compress-Archive -Path release\* -DestinationPath rust-r2-${{ matrix.platform.release_for }}.zip
+
+      - name: Prepare binaries (Unix)
+        if: matrix.platform.os != 'windows-latest'
+        run: |
+          mkdir release
+          cp target/${{ matrix.platform.target }}/release/rust-r2-cli release/
+          cp target/${{ matrix.platform.target }}/release/rust-r2-gui release/
+          tar czf rust-r2-${{ matrix.platform.release_for }}.tar.gz -C release .
+
+      - name: Upload artifact (Windows)
+        if: matrix.platform.os == 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-r2-${{ matrix.platform.release_for }}
+          path: rust-r2-${{ matrix.platform.release_for }}.zip
+
+      - name: Upload artifact (Unix)
+        if: matrix.platform.os != 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-r2-${{ matrix.platform.release_for }}
+          path: rust-r2-${{ matrix.platform.release_for }}.tar.gz
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Generate release notes
+        run: |
+          echo "# Release ${{ github.ref_name }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Downloads" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "### Windows" >> RELEASE_NOTES.md
+          echo "- [Windows x86_64](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-Windows-x86_64.zip)" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "### macOS" >> RELEASE_NOTES.md
+          echo "- [macOS x86_64 (Intel)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-macOS-x86_64.tar.gz)" >> RELEASE_NOTES.md
+          echo "- [macOS aarch64 (Apple Silicon)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-macOS-aarch64.tar.gz)" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "### Linux" >> RELEASE_NOTES.md
+          echo "- [Linux x86_64](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-Linux-x86_64.tar.gz)" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Installation" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "1. Download the appropriate archive for your platform" >> RELEASE_NOTES.md
+          echo "2. Extract the archive" >> RELEASE_NOTES.md
+          echo "3. Run \`rust-r2-gui\` for the GUI or \`rust-r2-cli\` for the command line interface" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "See the [documentation](https://github.com/${{ github.repository }}/tree/main/docs) for detailed usage instructions." >> RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            artifacts/rust-r2-Windows-x86_64/*.zip
+            artifacts/rust-r2-macOS-x86_64/*.tar.gz
+            artifacts/rust-r2-macOS-aarch64/*.tar.gz
+            artifacts/rust-r2-Linux-x86_64/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
