@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;
 use bytes::Bytes;
 use chrono::{DateTime, Local};
+use std::collections::HashSet;
 
 #[derive(Clone)]
 struct UploadRecord {
@@ -30,6 +31,13 @@ enum UploadMode {
     Folder,
 }
 
+#[derive(Clone, Default)]
+struct BucketState {
+    folders: Vec<String>,
+    loading: bool,
+    last_refresh: Option<std::time::Instant>,
+}
+
 pub struct UploadTab {
     state: Arc<Mutex<AppState>>,
     runtime: Arc<Runtime>,
@@ -38,6 +46,7 @@ pub struct UploadTab {
     folder_files: Vec<FolderFile>,
     object_key: String,
     folder_prefix: String,
+    selected_bucket_folder: Option<String>,
     encrypt_before_upload: bool,
     upload_in_progress: Arc<Mutex<bool>>,
     upload_progress: Arc<Mutex<f32>>,
@@ -46,6 +55,8 @@ pub struct UploadTab {
     upload_mode: UploadMode,
     show_folder_contents: bool,
     filter_text: String,
+    bucket_state: Arc<Mutex<BucketState>>,
+    needs_refresh: bool,
 }
 
 impl UploadTab {
@@ -58,6 +69,7 @@ impl UploadTab {
             folder_files: Vec::new(),
             object_key: String::new(),
             folder_prefix: String::new(),
+            selected_bucket_folder: None,
             encrypt_before_upload: false,
             upload_in_progress: Arc::new(Mutex::new(false)),
             upload_progress: Arc::new(Mutex::new(0.0)),
@@ -66,6 +78,8 @@ impl UploadTab {
             upload_mode: UploadMode::SingleFile,
             show_folder_contents: false,
             filter_text: String::new(),
+            bucket_state: Arc::new(Mutex::new(BucketState::default())),
+            needs_refresh: true,
         }
     }
     
@@ -77,7 +91,17 @@ impl UploadTab {
         
         if !is_connected {
             ui.colored_label(egui::Color32::YELLOW, "⚠️ Please configure and test connection first");
+            self.needs_refresh = true; // Reset for next connection
             return;
+        }
+        
+        // Auto-refresh bucket folders on first view
+        if self.needs_refresh {
+            let is_loading = self.bucket_state.lock().unwrap().loading;
+            if !is_loading {
+                self.needs_refresh = false;
+                self.refresh_folders(ctx);
+            }
         }
         
         // Upload mode selector
@@ -185,10 +209,18 @@ impl UploadTab {
             ui.label("Select File:");
             if ui.button("📁 Browse...").clicked() {
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    self.object_key = path.file_name()
+                    let filename = path.file_name()
                         .and_then(|n| n.to_str())
                         .unwrap_or("file")
                         .to_string();
+                    
+                    // If a folder is selected, prepend it to the object key
+                    if let Some(ref folder) = self.selected_bucket_folder {
+                        self.object_key = format!("{}{}", folder, filename);
+                    } else {
+                        self.object_key = filename;
+                    }
+                    
                     self.selected_file = Some(path);
                 }
             }
@@ -200,10 +232,90 @@ impl UploadTab {
         
         ui.add_space(10.0);
         
+        // Folder selection
+        let folders = self.bucket_state.lock().unwrap().folders.clone();
+        if !folders.is_empty() {
+            ui.separator();
+            ui.label("📁 Choose destination folder (optional):");
+            
+            // Add "Root" option
+            ui.horizontal(|ui| {
+                if ui.selectable_label(self.selected_bucket_folder.is_none(), "📁 / (root)").clicked() {
+                    self.selected_bucket_folder = None;
+                    // Update object key to remove folder prefix
+                    if let Some(ref path) = self.selected_file {
+                        if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                            self.object_key = filename.to_string();
+                        }
+                    }
+                }
+            });
+            
+            egui::ScrollArea::vertical()
+                .max_height(150.0)
+                .show(ui, |ui| {
+                    for folder in &folders {
+                        let is_selected = self.selected_bucket_folder.as_ref() == Some(folder);
+                        if ui.selectable_label(is_selected, format!("📁 {}", folder)).clicked() {
+                            self.selected_bucket_folder = Some(folder.clone());
+                            // Update object key with folder prefix
+                            if let Some(ref path) = self.selected_file {
+                                if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                                    self.object_key = format!("{}{}", folder, filename);
+                                }
+                            }
+                        }
+                    }
+                });
+            
+            ui.horizontal(|ui| {
+                if ui.small_button("🔄 Refresh folders").clicked() {
+                    self.refresh_folders(ctx);
+                }
+                
+                let state = self.bucket_state.lock().unwrap();
+                if state.loading {
+                    ui.spinner();
+                    ctx.request_repaint_after(std::time::Duration::from_millis(100));
+                } else if let Some(last_refresh) = state.last_refresh {
+                    let elapsed = last_refresh.elapsed().as_secs();
+                    ui.label(format!("(updated {}s ago)", elapsed));
+                }
+            });
+            
+            ui.separator();
+        }
+        
+        // Option to type a custom folder path
+        ui.horizontal(|ui| {
+            ui.label("Or type custom folder path:");
+            if ui.text_edit_singleline(&mut self.folder_prefix).changed() {
+                // Ensure folder ends with /
+                if !self.folder_prefix.is_empty() && !self.folder_prefix.ends_with('/') {
+                    self.folder_prefix.push('/');
+                }
+                
+                if !self.folder_prefix.is_empty() {
+                    self.selected_bucket_folder = Some(self.folder_prefix.clone());
+                    // Update object key with custom folder
+                    if let Some(ref path) = self.selected_file {
+                        if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                            self.object_key = format!("{}{}", self.folder_prefix, filename);
+                        }
+                    }
+                } else {
+                    self.selected_bucket_folder = None;
+                }
+            }
+            ui.label("(e.g., 'images/' or 'docs/2024/')");
+        });
+        
+        ui.add_space(10.0);
+        
         ui.horizontal(|ui| {
             ui.label("Object Key:");
             ui.text_edit_singleline(&mut self.object_key);
-            ui.label("(Name in R2 bucket)");
+            ui.label("(Full path in R2 bucket)");
         });
         
         ui.add_space(10.0);
@@ -616,6 +728,66 @@ impl UploadTab {
                 
                 // Also request another repaint after a short delay
                 std::thread::sleep(std::time::Duration::from_millis(100));
+                ctx.request_repaint();
+            });
+        });
+    }
+    
+    fn refresh_folders(&mut self, ctx: &egui::Context) {
+        // Check if already loading
+        {
+            let mut state = self.bucket_state.lock().unwrap();
+            if state.loading {
+                return;
+            }
+            state.loading = true;
+        }
+        
+        let app_state = self.state.clone();
+        let runtime = self.runtime.clone();
+        let bucket_state = self.bucket_state.clone();
+        let ctx = ctx.clone();
+        
+        std::thread::spawn(move || {
+            runtime.block_on(async {
+                let result = async {
+                    let client = app_state.lock().unwrap().r2_client.clone()
+                        .ok_or_else(|| anyhow::anyhow!("No R2 client available"))?;
+                    
+                    let objects = client.list_objects(None).await?;
+                    Ok::<Vec<String>, anyhow::Error>(objects)
+                }.await;
+                
+                let mut state = bucket_state.lock().unwrap();
+                state.loading = false;
+                
+                match result {
+                    Ok(objects) => {
+                        // Extract unique folders from object keys
+                        let mut folders = HashSet::new();
+                        for obj in &objects {
+                            if let Some(pos) = obj.rfind('/') {
+                                let folder = &obj[..=pos];
+                                // Add all parent folders
+                                let parts: Vec<&str> = folder.split('/').filter(|s| !s.is_empty()).collect();
+                                for i in 1..=parts.len() {
+                                    let partial = parts[..i].join("/") + "/";
+                                    folders.insert(partial);
+                                }
+                            }
+                        }
+                        
+                        let mut folder_list: Vec<String> = folders.into_iter().collect();
+                        folder_list.sort();
+                        state.folders = folder_list;
+                        state.last_refresh = Some(std::time::Instant::now());
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to refresh folders: {}", e);
+                        state.folders.clear();
+                    }
+                }
+                
                 ctx.request_repaint();
             });
         });
