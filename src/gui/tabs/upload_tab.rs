@@ -113,6 +113,31 @@ impl UploadTab {
             ctx.request_repaint_after(std::time::Duration::from_secs(1));
         }
         
+        // Show upload statistics
+        {
+            let recent = self.recent_uploads.lock().unwrap();
+            if !recent.is_empty() {
+                let total = recent.len();
+                let successful = recent.iter().filter(|u| u.success).count();
+                let failed = total - successful;
+                
+                ui.horizontal(|ui| {
+                    ui.label(format!("Total: {} uploads", total));
+                    ui.separator();
+                    ui.colored_label(egui::Color32::GREEN, format!("✓ {} successful", successful));
+                    if failed > 0 {
+                        ui.separator();
+                        ui.colored_label(egui::Color32::RED, format!("✗ {} failed", failed));
+                    }
+                    if ui.button("Clear History").clicked() {
+                        drop(recent);  // Release lock before acquiring it again
+                        self.recent_uploads.lock().unwrap().clear();
+                    }
+                });
+                ui.add_space(5.0);
+            }
+        }
+        
         egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
             let recent = self.recent_uploads.lock().unwrap().clone();
             eprintln!("DEBUG: Displaying {} recent uploads", recent.len());
@@ -130,8 +155,9 @@ impl UploadTab {
                         ui.strong("Encrypted");
                         ui.end_row();
                         
-                        // Show most recent first, limit to 10
-                        for upload in recent.iter().rev().take(10) {
+                        // Show most recent first, limit display to 25 for performance
+                        let display_limit = 25;
+                        for upload in recent.iter().rev().take(display_limit) {
                             ui.label(upload.timestamp.format("%H:%M:%S").to_string());
                             ui.label(&upload.object_key);
                             if upload.success {
@@ -140,6 +166,14 @@ impl UploadTab {
                                 ui.colored_label(egui::Color32::RED, "✗ Failed");
                             }
                             ui.label(if upload.encrypted { "🔒 Yes" } else { "No" });
+                            ui.end_row();
+                        }
+                        
+                        if recent.len() > display_limit {
+                            ui.label("");
+                            ui.label(format!("... and {} more", recent.len() - display_limit));
+                            ui.label("");
+                            ui.label("");
                             ui.end_row();
                         }
                     });
@@ -435,15 +469,10 @@ impl UploadTab {
                         success: result.is_ok(),
                     };
                     
-                    // Add to recent uploads
+                    // Add to recent uploads - no limit
                     {
                         let mut uploads = recent_uploads.lock().unwrap();
                         uploads.push(upload_record.clone());
-                        // Keep only last 50 uploads
-                        if uploads.len() > 50 {
-                            let drain_count = uploads.len() - 50;
-                            uploads.drain(0..drain_count);
-                        }
                         eprintln!("DEBUG: Added upload record. Total records: {}", uploads.len());
                         eprintln!("DEBUG: Last upload: {:?} - {} - {}", 
                                  upload_record.timestamp, upload_record.object_key, 
@@ -560,15 +589,10 @@ impl UploadTab {
                         success: result.is_ok(),
                     };
                     
-                    // Add to recent uploads
+                    // Add to recent uploads - no limit
                     {
                         let mut uploads = recent_uploads.lock().unwrap();
                         uploads.push(upload_record);
-                        // Keep only last 50 uploads
-                        if uploads.len() > 50 {
-                            let drain_count = uploads.len() - 50;
-                            uploads.drain(0..drain_count);
-                        }
                     }
                     
                     if let Err(e) = result {
