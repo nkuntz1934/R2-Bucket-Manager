@@ -1,9 +1,14 @@
-name: Release
+name: Build and Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -67,8 +72,8 @@ jobs:
         if: matrix.platform.os != 'windows-latest'
         run: |
           mkdir release
-          cp target/${{ matrix.platform.target }}/release/rust-r2-cli release/
-          cp target/${{ matrix.platform.target }}/release/rust-r2-gui release/
+          cp target/${{ matrix.platform.target }}/release/rust-r2-cli release/ || true
+          cp target/${{ matrix.platform.target }}/release/rust-r2-gui release/ || true
           tar czf rust-r2-${{ matrix.platform.release_for }}.tar.gz -C release .
 
       - name: Upload artifact (Windows)
@@ -89,7 +94,9 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout
@@ -102,19 +109,24 @@ jobs:
 
       - name: Generate release notes
         run: |
-          echo "# Release ${{ github.ref_name }}" > RELEASE_NOTES.md
+          RELEASE_NAME="dev-$(date +'%Y%m%d-%H%M%S')-${GITHUB_SHA::7}"
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          echo "# Development Build $RELEASE_NAME" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "**Commit:** ${{ github.sha }}" >> RELEASE_NOTES.md
+          echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "## Downloads" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### Windows" >> RELEASE_NOTES.md
-          echo "- [Windows x86_64](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-Windows-x86_64.zip)" >> RELEASE_NOTES.md
+          echo "- [Windows x86_64](https://github.com/${{ github.repository }}/releases/download/$RELEASE_NAME/rust-r2-Windows-x86_64.zip)" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### macOS" >> RELEASE_NOTES.md
-          echo "- [macOS x86_64 (Intel)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-macOS-x86_64.tar.gz)" >> RELEASE_NOTES.md
-          echo "- [macOS aarch64 (Apple Silicon)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-macOS-aarch64.tar.gz)" >> RELEASE_NOTES.md
+          echo "- [macOS x86_64 (Intel)](https://github.com/${{ github.repository }}/releases/download/$RELEASE_NAME/rust-r2-macOS-x86_64.tar.gz)" >> RELEASE_NOTES.md
+          echo "- [macOS aarch64 (Apple Silicon)](https://github.com/${{ github.repository }}/releases/download/$RELEASE_NAME/rust-r2-macOS-aarch64.tar.gz)" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### Linux" >> RELEASE_NOTES.md
-          echo "- [Linux x86_64](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rust-r2-Linux-x86_64.tar.gz)" >> RELEASE_NOTES.md
+          echo "- [Linux x86_64](https://github.com/${{ github.repository }}/releases/download/$RELEASE_NAME/rust-r2-Linux-x86_64.tar.gz)" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "## Installation" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
@@ -127,7 +139,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ env.RELEASE_NAME }}
+          name: Development Build ${{ env.RELEASE_NAME }}
           body_path: RELEASE_NOTES.md
+          prerelease: true
           files: |
             artifacts/rust-r2-Windows-x86_64/*.zip
             artifacts/rust-r2-macOS-x86_64/*.tar.gz

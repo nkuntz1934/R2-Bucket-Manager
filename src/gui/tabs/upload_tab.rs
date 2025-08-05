@@ -140,7 +140,6 @@ impl UploadTab {
         
         egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
             let recent = self.recent_uploads.lock().unwrap().clone();
-            eprintln!("DEBUG: Displaying {} recent uploads", recent.len());
             if recent.is_empty() {
                 ui.label("No recent uploads yet");
             } else {
@@ -473,10 +472,6 @@ impl UploadTab {
                     {
                         let mut uploads = recent_uploads.lock().unwrap();
                         uploads.push(upload_record.clone());
-                        eprintln!("DEBUG: Added upload record. Total records: {}", uploads.len());
-                        eprintln!("DEBUG: Last upload: {:?} - {} - {}", 
-                                 upload_record.timestamp, upload_record.object_key, 
-                                 if upload_record.success { "success" } else { "failed" });
                     }
                     
                     match result {

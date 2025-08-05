@@ -2,20 +2,22 @@
 
 [![Release](https://img.shields.io/github/v/release/yourusername/rust-r2)](https://github.com/yourusername/rust-r2/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build](https://github.com/yourusername/rust-r2/actions/workflows/release.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions)
+[![Build](https://github.com/yourusername/rust-r2/actions/workflows/build.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions)
 
 A cross-platform desktop application and CLI tool for managing Cloudflare R2 storage with OpenPGP encryption/decryption support.
 
 ## Download
 
-Download the latest release for your platform:
+Pre-built binaries are automatically generated for every commit to main. 
 
-| Platform | Download |
-|----------|----------|
-| **Windows** | [Download (.zip)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-Windows-x86_64.zip) |
-| **macOS Intel** | [Download (.tar.gz)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-macOS-x86_64.tar.gz) |
-| **macOS Apple Silicon** | [Download (.tar.gz)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-macOS-aarch64.tar.gz) |
-| **Linux** | [Download (.tar.gz)](https://github.com/yourusername/rust-r2/releases/latest/download/rust-r2-Linux-x86_64.tar.gz) |
+**[⬇️ Download Latest Release](https://github.com/yourusername/rust-r2/releases/latest)**
+
+| Platform | Architecture | Download |
+|----------|-------------|----------|
+| **Windows** | x86_64 | [Download Latest](https://github.com/yourusername/rust-r2/releases/latest) |
+| **macOS** | Intel (x86_64) | [Download Latest](https://github.com/yourusername/rust-r2/releases/latest) |
+| **macOS** | Apple Silicon (ARM64) | [Download Latest](https://github.com/yourusername/rust-r2/releases/latest) |
+| **Linux** | x86_64 | [Download Latest](https://github.com/yourusername/rust-r2/releases/latest) |
 
 Or build from source - see [Installation Guide](docs/INSTALLATION.md)
 
