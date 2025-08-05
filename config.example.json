@@ -1,0 +1,13 @@
+{
+  "r2": {
+    "access_key_id": "your_access_key_id",
+    "secret_access_key": "your_secret_access_key",
+    "account_id": "your_account_id",
+    "bucket_name": "your_bucket_name"
+  },
+  "pgp": {
+    "public_key_path": "/path/to/public.key",
+    "secret_key_path": "/path/to/secret.key",
+    "passphrase": "optional_passphrase"
+  }
+}

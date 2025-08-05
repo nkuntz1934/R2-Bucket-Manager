@@ -1,0 +1,41 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo
+Cargo.lock
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Configuration files with secrets
+config.json
+*.key
+*.pgp
+*.gpg
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Backup files
+*.backup
+*.bak
