@@ -43,7 +43,7 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -78,14 +78,14 @@ jobs:
 
       - name: Upload artifact (Windows)
         if: matrix.platform.os == 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-r2-${{ matrix.platform.release_for }}
           path: rust-r2-${{ matrix.platform.release_for }}.zip
 
       - name: Upload artifact (Unix)
         if: matrix.platform.os != 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-r2-${{ matrix.platform.release_for }}
           path: rust-r2-${{ matrix.platform.release_for }}.tar.gz
@@ -100,10 +100,10 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
