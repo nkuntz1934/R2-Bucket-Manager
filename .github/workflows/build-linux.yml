@@ -1,4 +1,4 @@
-name: Build Linux
+name: Build Linux (Debian/Ubuntu)
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-linux:
-    name: Build Linux
+    name: Build for Debian/Ubuntu
     runs-on: ubuntu-latest
     
     steps:
@@ -35,8 +35,6 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-gnu
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -49,45 +47,46 @@ jobs:
 
       - name: Build
         run: |
-          echo "Building for Linux x86_64"
+          echo "Building for Debian/Ubuntu Linux x86_64"
           echo "Rust version: $(rustc --version)"
-          cargo build --release --target x86_64-unknown-linux-gnu --verbose
+          echo "Building without explicit target (native build)..."
+          cargo build --release --verbose
           echo "Build completed successfully"
           
           # List the output
           echo "Checking build output:"
-          ls -la target/x86_64-unknown-linux-gnu/release/
+          ls -la target/release/
 
       - name: Prepare binaries
         run: |
           mkdir -p release
           
-          # Copy binaries if they exist
-          if [ -f "target/x86_64-unknown-linux-gnu/release/rust-r2-cli" ]; then
-            cp target/x86_64-unknown-linux-gnu/release/rust-r2-cli release/
+          # Copy binaries if they exist (from native target directory)
+          if [ -f "target/release/rust-r2-cli" ]; then
+            cp target/release/rust-r2-cli release/
             echo "✓ Copied rust-r2-cli"
           else
             echo "⚠️ rust-r2-cli not found!"
             exit 1
           fi
           
-          if [ -f "target/x86_64-unknown-linux-gnu/release/rust-r2-gui" ]; then
-            cp target/x86_64-unknown-linux-gnu/release/rust-r2-gui release/
+          if [ -f "target/release/rust-r2-gui" ]; then
+            cp target/release/rust-r2-gui release/
             echo "✓ Copied rust-r2-gui"
           else
             echo "⚠️ rust-r2-gui not found!"
             exit 1
           fi
           
-          # Create archive
-          tar czf rust-r2-Linux-x86_64.tar.gz -C release .
-          echo "✓ Created archive: rust-r2-Linux-x86_64.tar.gz"
+          # Create archive for Debian/Ubuntu
+          tar czf rust-r2-Linux-Debian-x86_64.tar.gz -C release .
+          echo "✓ Created archive: rust-r2-Linux-Debian-x86_64.tar.gz"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rust-r2-Linux-x86_64
-          path: rust-r2-Linux-x86_64.tar.gz
+          name: rust-r2-Linux-Debian-x86_64
+          path: rust-r2-Linux-Debian-x86_64.tar.gz
 
   create-release:
     needs: build-linux

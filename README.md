@@ -8,11 +8,11 @@
 
 **Secure, fast, cross-platform desktop app and CLI for Cloudflare R2 storage with end-to-end encryption.**
 
-## ⬇️ Download
+## Download
 
 **[Download Latest Release](https://github.com/yourusername/rust-r2/releases/latest)** - Pre-built binaries for Windows, macOS (Intel/ARM), and Linux
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Download and extract the latest release, then:
@@ -20,7 +20,7 @@
 ./rust-r2-cli --config config.json list         # Use CLI
 ```
 
-## 📚 Documentation
+## Documentation
 
 | Essential Guides | Advanced Topics | Development |
 |-----------------|-----------------|-------------|
@@ -30,34 +30,34 @@
 | [**User Guide**](docs/USER_GUIDE.md) | [Troubleshooting](docs/USER_GUIDE.md#troubleshooting) | [API Reference](docs/API.md) |
 | [**CLI Reference**](docs/CLI_REFERENCE.md) | [File Type Support](docs/USER_GUIDE.md#file-type-support) | |
 
-## ✨ Key Features
+## Key Features
 
-### 🖥️ Desktop GUI
+### Desktop GUI
 - **Intuitive Interface** - Native app for Windows, macOS, Linux
 - **Folder Operations** - Upload/download entire directories
 - **Visual Progress** - Real-time progress bars and status
 - **History Tracking** - Recent uploads/downloads with status
 
-### 📟 CLI Tool  
+### CLI Tool  
 - **Automation Ready** - Script-friendly commands
 - **Batch Operations** - Process multiple files efficiently
 - **Pipeline Support** - Unix pipe compatible
 - **Exit Codes** - Proper error codes for scripting
 
-### 🔐 Security
+### Security
 - **End-to-End Encryption** - OpenPGP (RSA 2048/4096-bit)
 - **Transport Security** - TLS 1.2+ enforced, HTTPS only
 - **Local Key Storage** - Keys never leave your machine
 - **Zero-Knowledge** - Cloudflare cannot decrypt your files
 - [**Learn More →**](docs/ENCRYPTION.md)
 
-### ⚡ Performance
+### Performance
 - **Native Speed** - Built in Rust for optimal performance
 - **Async Operations** - Non-blocking UI, background threads
 - **Smart Caching** - Efficient state management
 - **Minimal Memory** - Low resource consumption
 
-## 🛠️ Basic Usage
+## Basic Usage
 
 ### GUI Application
 ```bash
@@ -88,7 +88,7 @@
 
 [**Full CLI Documentation →**](docs/CLI_REFERENCE.md)
 
-## 🔧 Configuration
+## Configuration
 
 ### Quick Setup
 1. Get R2 credentials from [Cloudflare Dashboard](https://dash.cloudflare.com/)
@@ -110,7 +110,7 @@
 
 [**Detailed Configuration Guide →**](docs/CONFIGURATION.md)
 
-## 🏗️ Building from Source
+## Building from Source
 
 ```bash
 # Prerequisites: Rust 1.70+, Git
@@ -124,15 +124,15 @@ cargo build --release
 
 [**Full Build Instructions →**](docs/INSTALLATION.md)
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## 🔗 Links
+## Links
 
 - [Releases](https://github.com/yourusername/rust-r2/releases)
 - [Issues](https://github.com/yourusername/rust-r2/issues)
@@ -143,5 +143,5 @@ MIT License - see [LICENSE](LICENSE) file.
 ---
 
 <p align="center">
-  Built with ❤️ using Rust | Secure by Design | Fast by Default
+  Built with Rust | Secure by Design | Fast by Default
 </p>
