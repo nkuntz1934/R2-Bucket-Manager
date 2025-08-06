@@ -31,7 +31,8 @@ Pre-built binaries are automatically generated when source code changes:
 |----------|--------------|--------------|----------|
 | **macOS** | Intel (x86_64) & Apple Silicon (ARM64) | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
 | **Windows** | x64 | [![Windows](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
-| **Linux** | x64 (Ubuntu/Debian) | [![Linux](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| **Linux (Debian/Ubuntu)** | x64 | [![Linux-Debian](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| **Linux (Fedora/RHEL)** | x64 | [![Linux-Fedora](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
 
 ## Quick Start
 
