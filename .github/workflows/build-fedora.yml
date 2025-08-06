@@ -1,0 +1,117 @@
+name: Build Linux (Fedora/RHEL)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-fedora:
+    name: Build for Fedora/RHEL
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          dnf update -y
+          dnf install -y \
+            gcc \
+            gcc-c++ \
+            make \
+            openssl-devel \
+            pkg-config \
+            gtk3-devel \
+            libxcb-devel \
+            libxkbcommon-devel \
+            fontconfig-devel \
+            atk-devel \
+            gdk-pixbuf2-devel \
+            pango-devel \
+            cairo-devel \
+            curl \
+            git
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustc --version
+          cargo --version
+
+      - name: Build
+        run: |
+          source $HOME/.cargo/env
+          echo "Building for Fedora/RHEL x86_64"
+          echo "Rust version: $(rustc --version)"
+          cargo build --release --verbose
+          echo "Build completed successfully"
+          
+          # List the output
+          echo "Checking build output:"
+          ls -la target/release/
+
+      - name: Prepare binaries
+        run: |
+          mkdir -p release
+          
+          # Copy binaries if they exist
+          if [ -f "target/release/rust-r2-cli" ]; then
+            cp target/release/rust-r2-cli release/
+            echo "✓ Copied rust-r2-cli"
+          else
+            echo "⚠️ rust-r2-cli not found!"
+            exit 1
+          fi
+          
+          if [ -f "target/release/rust-r2-gui" ]; then
+            cp target/release/rust-r2-gui release/
+            echo "✓ Copied rust-r2-gui"
+          else
+            echo "⚠️ rust-r2-gui not found!"
+            exit 1
+          fi
+          
+          # Create archive for Fedora/RHEL
+          tar czf rust-r2-Linux-Fedora-x86_64.tar.gz -C release .
+          echo "✓ Created archive: rust-r2-Linux-Fedora-x86_64.tar.gz"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-r2-Linux-Fedora-x86_64
+          path: rust-r2-Linux-Fedora-x86_64.tar.gz
+
+  create-release:
+    needs: build-fedora
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: fedora-${{ github.run_number }}
+          name: Fedora/RHEL Build ${{ github.run_number }}
+          draft: false
+          prerelease: true
+          files: |
+            artifacts/**/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

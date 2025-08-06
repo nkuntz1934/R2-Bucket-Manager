@@ -20,13 +20,18 @@
 - Development packages for your distribution:
   ```bash
   # Ubuntu/Debian
-  sudo apt-get install build-essential libssl-dev pkg-config
+  sudo apt-get install build-essential libssl-dev pkg-config libgtk-3-dev \
+    libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+    libspeechd-dev libxkbcommon-dev libfontconfig1-dev
   
   # Fedora/RHEL/CentOS
-  sudo dnf install gcc openssl-devel pkg-config
+  sudo dnf install gcc gcc-c++ openssl-devel pkg-config gtk3-devel \
+    libxcb-devel libxkbcommon-devel fontconfig-devel \
+    atk-devel gdk-pixbuf2-devel pango-devel cairo-devel
   
   # Arch Linux
-  sudo pacman -S base-devel openssl pkg-config
+  sudo pacman -S base-devel openssl pkg-config gtk3 libxcb \
+    libxkbcommon fontconfig
   ```
 
 ## Installation Steps
