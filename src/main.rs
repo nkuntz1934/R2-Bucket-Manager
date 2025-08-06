@@ -99,11 +99,26 @@ async fn main() -> Result<()> {
     
     let mut pgp_handler = crypto::PgpHandler::new();
     
-    if let Some(public_key_path) = &config.pgp.public_key_path {
+    // Load multiple public keys for team encryption
+    for public_key_path in &config.pgp.public_key_paths {
         let key_data = fs::read(public_key_path)
-            .context("Failed to read public key file")?;
+            .context(format!("Failed to read public key file: {}", public_key_path))?;
         pgp_handler.load_public_key(&key_data)?;
         info!("Loaded public key from {}", public_key_path);
+    }
+    
+    // Load team keys if configured
+    for team_key in &config.pgp.team_keys {
+        if team_key.enabled {
+            let key_data = fs::read(&team_key.public_key_path)
+                .context(format!("Failed to read team key for {}: {}", team_key.name, team_key.public_key_path))?;
+            pgp_handler.load_public_key(&key_data)?;
+            info!("Loaded team key for {} ({})", team_key.name, team_key.email);
+        }
+    }
+    
+    if pgp_handler.public_key_count() > 0 {
+        info!("Loaded {} public keys for encryption", pgp_handler.public_key_count());
     }
     
     if let Some(secret_key_path) = &config.pgp.secret_key_path {
@@ -114,14 +129,27 @@ async fn main() -> Result<()> {
     }
     
     match cli.command {
-        Commands::Download { key, output, decrypt } => {
+        Commands::Download { key, output, mut decrypt } => {
             info!("Downloading object: {}", key);
             let data = r2_client.download_object(&key).await?;
             
+            // Auto-detect encryption if file has .pgp extension or contains PGP data
+            let is_encrypted = key.ends_with(".pgp") || crypto::PgpHandler::is_pgp_encrypted(&data);
+            
+            if is_encrypted && !decrypt {
+                info!("Auto-detected encrypted file ({})", if key.ends_with(".pgp") { ".pgp extension" } else { "PGP headers" });
+                decrypt = true;
+            }
+            
             let final_data = if decrypt {
-                info!("Decrypting downloaded data");
-                let decrypted = pgp_handler.decrypt(&data)?;
-                Bytes::from(decrypted)
+                if !is_encrypted {
+                    info!("Warning: File does not appear to be encrypted, skipping decryption");
+                    data
+                } else {
+                    info!("Decrypting downloaded data");
+                    let decrypted = pgp_handler.decrypt(&data)?;
+                    Bytes::from(decrypted)
+                }
             } else {
                 data
             };
@@ -131,14 +159,24 @@ async fn main() -> Result<()> {
             info!("Downloaded to: {}", output.display());
         }
         
-        Commands::Upload { file, key, encrypt } => {
+        Commands::Upload { file, mut key, encrypt } => {
             info!("Uploading file: {} to {}", file.display(), key);
             let data = fs::read(&file)
                 .context("Failed to read input file")?;
             
             let final_data = if encrypt {
-                info!("Encrypting file data");
+                if pgp_handler.public_key_count() == 0 {
+                    return Err(anyhow::anyhow!("No public keys loaded for encryption. Please configure team keys."));
+                }
+                info!("Encrypting file data for {} recipients", pgp_handler.public_key_count());
                 let encrypted = pgp_handler.encrypt(&data)?;
+                
+                // Add .pgp extension if not already present
+                if !key.ends_with(".pgp") {
+                    key = format!("{}.pgp", key);
+                    info!("Added .pgp extension to object key: {}", key);
+                }
+                
                 Bytes::from(encrypted)
             } else {
                 Bytes::from(data)
@@ -168,12 +206,22 @@ async fn main() -> Result<()> {
             info!("Successfully deleted: {}", key);
         }
         
-        Commands::Process { source_key, dest_key, temp_file } => {
+        Commands::Process { source_key, mut dest_key, temp_file } => {
             info!("Processing: {} -> {}", source_key, dest_key);
             
-            info!("Downloading and decrypting from R2");
-            let encrypted_data = r2_client.download_object(&source_key).await?;
-            let decrypted_data = pgp_handler.decrypt(&encrypted_data)?;
+            info!("Downloading from R2");
+            let downloaded_data = r2_client.download_object(&source_key).await?;
+            
+            // Check if source is encrypted
+            let is_encrypted = source_key.ends_with(".pgp") || crypto::PgpHandler::is_pgp_encrypted(&downloaded_data);
+            
+            let decrypted_data = if is_encrypted {
+                info!("Decrypting source file");
+                pgp_handler.decrypt(&downloaded_data)?
+            } else {
+                info!("Source file is not encrypted");
+                downloaded_data.to_vec()
+            };
             
             if let Some(temp_path) = &temp_file {
                 info!("Saving decrypted data to temporary file: {}", temp_path.display());
@@ -189,17 +237,39 @@ async fn main() -> Result<()> {
                 let modified_data = fs::read(temp_path)
                     .context("Failed to read modified file")?;
                 
-                info!("Encrypting modified data");
-                let encrypted_data = pgp_handler.encrypt(&modified_data)?;
-                
-                info!("Uploading encrypted data to R2");
-                r2_client.upload_object(&dest_key, Bytes::from(encrypted_data)).await?;
+                if pgp_handler.public_key_count() > 0 {
+                    info!("Encrypting modified data for {} recipients", pgp_handler.public_key_count());
+                    let encrypted_data = pgp_handler.encrypt(&modified_data)?;
+                    
+                    // Add .pgp extension if not present
+                    if !dest_key.ends_with(".pgp") {
+                        dest_key = format!("{}.pgp", dest_key);
+                        info!("Added .pgp extension to destination key: {}", dest_key);
+                    }
+                    
+                    info!("Uploading encrypted data to R2");
+                    r2_client.upload_object(&dest_key, Bytes::from(encrypted_data)).await?;
+                } else {
+                    info!("No encryption keys configured, uploading unencrypted");
+                    r2_client.upload_object(&dest_key, Bytes::from(modified_data)).await?;
+                }
             } else {
-                info!("Re-encrypting data");
-                let encrypted_data = pgp_handler.encrypt(&decrypted_data)?;
-                
-                info!("Uploading encrypted data to R2");
-                r2_client.upload_object(&dest_key, Bytes::from(encrypted_data)).await?;
+                if pgp_handler.public_key_count() > 0 {
+                    info!("Re-encrypting data for {} recipients", pgp_handler.public_key_count());
+                    let encrypted_data = pgp_handler.encrypt(&decrypted_data)?;
+                    
+                    // Add .pgp extension if not present
+                    if !dest_key.ends_with(".pgp") {
+                        dest_key = format!("{}.pgp", dest_key);
+                        info!("Added .pgp extension to destination key: {}", dest_key);
+                    }
+                    
+                    info!("Uploading encrypted data to R2");
+                    r2_client.upload_object(&dest_key, Bytes::from(encrypted_data)).await?;
+                } else {
+                    info!("No encryption keys configured, uploading unencrypted");
+                    r2_client.upload_object(&dest_key, Bytes::from(decrypted_data)).await?;
+                }
             }
             
             info!("Successfully processed: {} -> {}", source_key, dest_key);

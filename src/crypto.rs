@@ -1,4 +1,4 @@
-use anyhow::{Result, Context};
+use anyhow::{Result, Context, anyhow};
 use pgp::ArmorOptions;
 use pgp::composed::{Deserializable, SignedPublicKey, SignedSecretKey, Message};
 use pgp::crypto::sym::SymmetricKeyAlgorithm;
@@ -6,14 +6,14 @@ use pgp::types::SecretKeyTrait;
 use std::io::Cursor;
 
 pub struct PgpHandler {
-    public_key: Option<SignedPublicKey>,
+    public_keys: Vec<SignedPublicKey>,  // Multiple public keys for team encryption
     secret_key: Option<SignedSecretKey>,
 }
 
 impl PgpHandler {
     pub fn new() -> Self {
         Self {
-            public_key: None,
+            public_keys: Vec::new(),
             secret_key: None,
         }
     }
@@ -21,8 +21,16 @@ impl PgpHandler {
     pub fn load_public_key(&mut self, key_data: &[u8]) -> Result<()> {
         let (public_key, _) = SignedPublicKey::from_armor_single(Cursor::new(key_data))
             .context("Failed to parse public key")?;
-        self.public_key = Some(public_key);
+        self.public_keys.push(public_key);
         Ok(())
+    }
+    
+    pub fn clear_public_keys(&mut self) {
+        self.public_keys.clear();
+    }
+    
+    pub fn public_key_count(&self) -> usize {
+        self.public_keys.len()
     }
 
     pub fn load_secret_key(&mut self, key_data: &[u8], passphrase: Option<&str>) -> Result<()> {
@@ -40,14 +48,18 @@ impl PgpHandler {
     }
 
     pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
-        let public_key = self.public_key.as_ref()
-            .context("No public key loaded for encryption")?;
+        if self.public_keys.is_empty() {
+            return Err(anyhow!("No public keys loaded for encryption"));
+        }
         
         // Create a binary literal message instead of converting to string
         let message = Message::new_literal_bytes("data", data);
         
+        // Collect references to all public keys for multi-recipient encryption
+        let key_refs: Vec<&SignedPublicKey> = self.public_keys.iter().collect();
+        
         let encrypted = message
-            .encrypt_to_keys(&mut rand::thread_rng(), SymmetricKeyAlgorithm::AES256, &[public_key])
+            .encrypt_to_keys(&mut rand::thread_rng(), SymmetricKeyAlgorithm::AES256, &key_refs)
             .context("Failed to encrypt message")?;
         
         let mut output = Vec::new();
@@ -55,6 +67,20 @@ impl PgpHandler {
             .context("Failed to write encrypted message")?;
         
         Ok(output)
+    }
+    
+    pub fn is_pgp_encrypted(data: &[u8]) -> bool {
+        // Check for PGP armor headers
+        if data.starts_with(b"-----BEGIN PGP MESSAGE-----") {
+            return true;
+        }
+        
+        // Check for binary PGP message (starts with 0x85 or 0x84 for encrypted data)
+        if data.len() > 2 && (data[0] == 0x85 || data[0] == 0x84) {
+            return true;
+        }
+        
+        false
     }
 
     pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>> {
@@ -100,18 +126,27 @@ impl PgpHandler {
 
     #[allow(dead_code)]
     pub fn verify(&self, signed_data: &[u8]) -> Result<Vec<u8>> {
-        let public_key = self.public_key.as_ref()
-            .context("No public key loaded for verification")?;
+        if self.public_keys.is_empty() {
+            return Err(anyhow!("No public keys loaded for verification"));
+        }
         
         let (message, _) = Message::from_armor_single(Cursor::new(signed_data))
             .context("Failed to parse signed message")?;
         
-        message.verify(public_key).context("Signature verification failed")?;
+        // Try to verify with any of the loaded public keys
+        let mut last_error = None;
+        for public_key in &self.public_keys {
+            match message.verify(public_key) {
+                Ok(_) => {
+                    let content = message.get_content()
+                        .context("Failed to get message content")?
+                        .context("No content in signed message")?;
+                    return Ok(content.clone());
+                }
+                Err(e) => last_error = Some(e),
+            }
+        }
         
-        let content = message.get_content()
-            .context("Failed to get message content")?
-            .context("No content in signed message")?;
-        
-        Ok(content.clone())
+        Err(anyhow!("Signature verification failed with all keys: {:?}", last_error))
     }
 }

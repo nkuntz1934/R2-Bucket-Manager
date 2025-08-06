@@ -1,0 +1,53 @@
+{
+  "r2": {
+    "access_key_id": "your_access_key_id",
+    "secret_access_key": "your_secret_access_key",
+    "account_id": "your_account_id",
+    "bucket_name": "your_bucket_name"
+  },
+  "pgp": {
+    "public_key_paths": [
+      "/path/to/your/public.key"
+    ],
+    "secret_key_path": "/path/to/your/secret.key",
+    "passphrase": "optional_passphrase",
+    "team_keys": [
+      {
+        "name": "Alice Johnson",
+        "email": "alice@company.com",
+        "public_key_path": "/path/to/keys/alice_public.key",
+        "enabled": true
+      },
+      {
+        "name": "Bob Smith",
+        "email": "bob@company.com",
+        "public_key_path": "/path/to/keys/bob_public.key",
+        "enabled": true
+      },
+      {
+        "name": "Charlie Brown",
+        "email": "charlie@company.com",
+        "public_key_path": "/path/to/keys/charlie_public.key",
+        "enabled": true
+      },
+      {
+        "name": "Diana Prince",
+        "email": "diana@company.com",
+        "public_key_path": "/path/to/keys/diana_public.key",
+        "enabled": true
+      },
+      {
+        "name": "Eve Anderson",
+        "email": "eve@company.com",
+        "public_key_path": "/path/to/keys/eve_public.key",
+        "enabled": true
+      },
+      {
+        "name": "Frank Miller",
+        "email": "frank@company.com",
+        "public_key_path": "/path/to/keys/frank_public.key",
+        "enabled": false
+      }
+    ]
+  }
+}

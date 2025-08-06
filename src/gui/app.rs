@@ -77,7 +77,7 @@ impl eframe::App for R2App {
                 
                 // Show PGP status
                 ui.separator();
-                let has_pgp = state.config.pgp.public_key_path.is_some() && 
+                let has_pgp = !state.config.pgp.public_key_paths.is_empty() && 
                              state.config.pgp.secret_key_path.is_some();
                 if has_pgp {
                     ui.colored_label(egui::Color32::GREEN, "🔐 PGP Ready");

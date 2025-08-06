@@ -19,9 +19,10 @@ impl Default for Config {
                 bucket_name: String::new(),
             },
             pgp: PgpConfig {
-                public_key_path: None,
+                public_key_paths: Vec::new(),
                 secret_key_path: None,
                 passphrase: None,
+                team_keys: Vec::new(),
             },
         }
     }
@@ -36,10 +37,21 @@ pub struct R2Config {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamKey {
+    pub name: String,
+    pub email: String,
+    pub public_key_path: String,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PgpConfig {
-    pub public_key_path: Option<String>,
-    pub secret_key_path: Option<String>,
+    #[serde(default)]
+    pub public_key_paths: Vec<String>,  // Multiple public keys for encryption
+    pub secret_key_path: Option<String>, // Your secret key for decryption
     pub passphrase: Option<String>,
+    #[serde(default)]
+    pub team_keys: Vec<TeamKey>,  // Team member keys with metadata
 }
 
 impl Config {
@@ -66,9 +78,13 @@ impl Config {
                     .context("R2_BUCKET_NAME environment variable not set")?,
             },
             pgp: PgpConfig {
-                public_key_path: std::env::var("PGP_PUBLIC_KEY_PATH").ok(),
+                public_key_paths: std::env::var("PGP_PUBLIC_KEY_PATHS")
+                    .ok()
+                    .map(|s| s.split(',').map(String::from).collect())
+                    .unwrap_or_default(),
                 secret_key_path: std::env::var("PGP_SECRET_KEY_PATH").ok(),
                 passphrase: std::env::var("PGP_PASSPHRASE").ok(),
+                team_keys: Vec::new(),
             },
         })
     }

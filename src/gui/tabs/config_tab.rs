@@ -28,7 +28,7 @@ impl ConfigTab {
             secret_access_key: config.r2.secret_access_key,
             account_id: config.r2.account_id,
             bucket_name: config.r2.bucket_name,
-            public_key_path: config.pgp.public_key_path.unwrap_or_default(),
+            public_key_path: config.pgp.public_key_paths.first().cloned().unwrap_or_default(),
             secret_key_path: config.pgp.secret_key_path.unwrap_or_default(),
             passphrase: config.pgp.passphrase.unwrap_or_default(),
             show_secret: false,
@@ -182,7 +182,7 @@ impl ConfigTab {
         state.config.r2.secret_access_key = self.secret_access_key.clone();
         state.config.r2.account_id = self.account_id.clone();
         state.config.r2.bucket_name = self.bucket_name.clone();
-        state.config.pgp.public_key_path = if self.public_key_path.is_empty() { None } else { Some(self.public_key_path.clone()) };
+        state.config.pgp.public_key_paths = if self.public_key_path.is_empty() { Vec::new() } else { vec![self.public_key_path.clone()] };
         state.config.pgp.secret_key_path = if self.secret_key_path.is_empty() { None } else { Some(self.secret_key_path.clone()) };
         state.config.pgp.passphrase = if self.passphrase.is_empty() { None } else { Some(self.passphrase.clone()) };
         
@@ -210,7 +210,7 @@ impl ConfigTab {
                     self.secret_access_key = config.r2.secret_access_key.clone();
                     self.account_id = config.r2.account_id.clone();
                     self.bucket_name = config.r2.bucket_name.clone();
-                    self.public_key_path = config.pgp.public_key_path.clone().unwrap_or_default();
+                    self.public_key_path = config.pgp.public_key_paths.first().cloned().unwrap_or_default();
                     self.secret_key_path = config.pgp.secret_key_path.clone().unwrap_or_default();
                     self.passphrase = config.pgp.passphrase.clone().unwrap_or_default();
                     
@@ -238,7 +238,7 @@ impl ConfigTab {
                 self.secret_access_key = config.r2.secret_access_key.clone();
                 self.account_id = config.r2.account_id.clone();
                 self.bucket_name = config.r2.bucket_name.clone();
-                self.public_key_path = config.pgp.public_key_path.clone().unwrap_or_default();
+                self.public_key_path = config.pgp.public_key_paths.first().cloned().unwrap_or_default();
                 self.secret_key_path = config.pgp.secret_key_path.clone().unwrap_or_default();
                 self.passphrase = config.pgp.passphrase.clone().unwrap_or_default();
                 
@@ -336,7 +336,7 @@ impl ConfigTab {
             state.config.r2.secret_access_key = self.secret_access_key.clone();
             state.config.r2.account_id = self.account_id.clone();
             state.config.r2.bucket_name = self.bucket_name.clone();
-            state.config.pgp.public_key_path = if self.public_key_path.is_empty() { None } else { Some(self.public_key_path.clone()) };
+            state.config.pgp.public_key_paths = if self.public_key_path.is_empty() { Vec::new() } else { vec![self.public_key_path.clone()] };
             state.config.pgp.secret_key_path = if self.secret_key_path.is_empty() { None } else { Some(self.secret_key_path.clone()) };
             state.config.pgp.passphrase = if self.passphrase.is_empty() { None } else { Some(self.passphrase.clone()) };
             
