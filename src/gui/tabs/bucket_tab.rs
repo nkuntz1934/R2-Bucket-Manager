@@ -199,7 +199,21 @@ impl BucketTab {
                                 }
                             }
                             
-                            ui.label(&obj.key);
+                            // Show object key with encryption indicator
+                            ui.horizontal(|ui| {
+                                if obj.key.ends_with(".pgp") {
+                                    ui.colored_label(egui::Color32::from_rgb(255, 200, 0), "🔐");
+                                    // Show original filename without .pgp extension
+                                    let display_name = if obj.key.ends_with(".pgp") {
+                                        &obj.key[..obj.key.len() - 4]
+                                    } else {
+                                        &obj.key
+                                    };
+                                    ui.label(format!("{} (encrypted)", display_name));
+                                } else {
+                                    ui.label(&obj.key);
+                                }
+                            });
                             
                             ui.horizontal(|ui| {
                                 if ui.small_button("⬇️").on_hover_text("Download").clicked() {

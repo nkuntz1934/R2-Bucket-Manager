@@ -6,6 +6,7 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub r2: R2Config,
+    #[serde(default)]
     pub pgp: PgpConfig,
 }
 
@@ -18,12 +19,7 @@ impl Default for Config {
                 account_id: String::new(),
                 bucket_name: String::new(),
             },
-            pgp: PgpConfig {
-                public_key_paths: Vec::new(),
-                secret_key_path: None,
-                passphrase: None,
-                team_keys: Vec::new(),
-            },
+            pgp: PgpConfig::default(),
         }
     }
 }
@@ -38,20 +34,29 @@ pub struct R2Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TeamKey {
-    pub name: String,
-    pub email: String,
     pub public_key_path: String,
+    #[serde(default = "default_true")]
     pub enabled: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+fn default_true() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PgpConfig {
     #[serde(default)]
-    pub public_key_paths: Vec<String>,  // Multiple public keys for encryption
-    pub secret_key_path: Option<String>, // Your secret key for decryption
-    pub passphrase: Option<String>,
+    pub team_keys: Vec<String>,  // Simple list of team key paths
     #[serde(default)]
-    pub team_keys: Vec<TeamKey>,  // Team member keys with metadata
+    pub secret_key_path: Option<String>, // Your secret key for decryption
+    #[serde(default)]
+    pub passphrase: Option<String>,
+    
+    // Legacy fields for backward compatibility
+    #[serde(default)]
+    pub public_key_paths: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub team_keys_detailed: Vec<TeamKey>,
 }
 
 impl Config {
@@ -77,15 +82,7 @@ impl Config {
                 bucket_name: std::env::var("R2_BUCKET_NAME")
                     .context("R2_BUCKET_NAME environment variable not set")?,
             },
-            pgp: PgpConfig {
-                public_key_paths: std::env::var("PGP_PUBLIC_KEY_PATHS")
-                    .ok()
-                    .map(|s| s.split(',').map(String::from).collect())
-                    .unwrap_or_default(),
-                secret_key_path: std::env::var("PGP_SECRET_KEY_PATH").ok(),
-                passphrase: std::env::var("PGP_PASSPHRASE").ok(),
-                team_keys: Vec::new(),
-            },
+            pgp: PgpConfig::default(),
         })
     }
 

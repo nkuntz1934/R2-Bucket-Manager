@@ -1,0 +1,20 @@
+{
+  "r2": {
+    "access_key_id": "your_access_key_id",
+    "secret_access_key": "your_secret_access_key",
+    "account_id": "your_account_id",
+    "bucket_name": "your_bucket_name"
+  },
+  "pgp": {
+    "team_keys": [
+      "/path/to/alice_public.key",
+      "/path/to/bob_public.key",
+      "/path/to/charlie_public.key",
+      "/path/to/diana_public.key",
+      "/path/to/eve_public.key",
+      "/path/to/frank_public.key"
+    ],
+    "secret_key_path": "/path/to/your_secret.key",
+    "passphrase": "optional_passphrase"
+  }
+}

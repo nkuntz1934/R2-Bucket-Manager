@@ -99,21 +99,68 @@ async fn main() -> Result<()> {
     
     let mut pgp_handler = crypto::PgpHandler::new();
     
-    // Load multiple public keys for team encryption
-    for public_key_path in &config.pgp.public_key_paths {
-        let key_data = fs::read(public_key_path)
-            .context(format!("Failed to read public key file: {}", public_key_path))?;
-        pgp_handler.load_public_key(&key_data)?;
-        info!("Loaded public key from {}", public_key_path);
+    // Load team keys (handles keyrings with both public and private keys)
+    for key_path in &config.pgp.team_keys {
+        match fs::read(key_path) {
+            Ok(key_data) => {
+                match pgp_handler.load_keyring(&key_data, config.pgp.passphrase.as_deref()) {
+                    Ok((key_infos, private_key_loaded)) => {
+                        info!("Loaded {} public keys from {}", key_infos.len(), key_path);
+                        for key_info in key_infos {
+                            info!("  - {} <{}>", key_info.name, key_info.email);
+                        }
+                        if private_key_loaded {
+                            info!("Also loaded private key from {}", key_path);
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to load keyring from {}: {}", key_path, e);
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Failed to read key file {}: {}", key_path, e);
+            }
+        }
     }
     
-    // Load team keys if configured
-    for team_key in &config.pgp.team_keys {
+    // Load legacy public_key_paths for backward compatibility
+    for key_path in &config.pgp.public_key_paths {
+        match fs::read(key_path) {
+            Ok(key_data) => {
+                match pgp_handler.load_public_key(&key_data) {
+                    Ok(key_info) => {
+                        info!("Loaded public key: {} <{}> from {}", key_info.name, key_info.email, key_path);
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to load key from {}: {}", key_path, e);
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Failed to read key file {}: {}", key_path, e);
+            }
+        }
+    }
+    
+    // Load legacy team_keys_detailed for backward compatibility
+    for team_key in &config.pgp.team_keys_detailed {
         if team_key.enabled {
-            let key_data = fs::read(&team_key.public_key_path)
-                .context(format!("Failed to read team key for {}: {}", team_key.name, team_key.public_key_path))?;
-            pgp_handler.load_public_key(&key_data)?;
-            info!("Loaded team key for {} ({})", team_key.name, team_key.email);
+            match fs::read(&team_key.public_key_path) {
+                Ok(key_data) => {
+                    match pgp_handler.load_public_key(&key_data) {
+                        Ok(key_info) => {
+                            info!("Loaded team key: {} <{}> from {}", key_info.name, key_info.email, team_key.public_key_path);
+                        }
+                        Err(e) => {
+                            tracing::warn!("Failed to load key from {}: {}", team_key.public_key_path, e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to read key file {}: {}", team_key.public_key_path, e);
+                }
+            }
         }
     }
     
@@ -121,11 +168,16 @@ async fn main() -> Result<()> {
         info!("Loaded {} public keys for encryption", pgp_handler.public_key_count());
     }
     
-    if let Some(secret_key_path) = &config.pgp.secret_key_path {
-        let key_data = fs::read(secret_key_path)
-            .context("Failed to read secret key file")?;
-        pgp_handler.load_secret_key(&key_data, config.pgp.passphrase.as_deref())?;
-        info!("Loaded secret key from {}", secret_key_path);
+    // Load separate secret key if specified and not already loaded from a keyring
+    if !pgp_handler.has_secret_key() {
+        if let Some(secret_key_path) = &config.pgp.secret_key_path {
+            let key_data = fs::read(secret_key_path)
+                .context("Failed to read secret key file")?;
+            pgp_handler.load_secret_key(&key_data, config.pgp.passphrase.as_deref())?;
+            info!("Loaded secret key from {}", secret_key_path);
+        }
+    } else {
+        info!("Secret key already loaded from keyring");
     }
     
     match cli.command {

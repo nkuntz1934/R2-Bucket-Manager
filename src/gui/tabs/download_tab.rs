@@ -227,7 +227,15 @@ impl DownloadTab {
                 .show(ui, |ui| {
                     for obj in &objects {
                         let is_selected = self.selected_object.as_ref() == Some(obj);
-                        if ui.selectable_label(is_selected, obj).clicked() {
+                        
+                        // Show with encryption indicator
+                        let label = if obj.ends_with(".pgp") {
+                            format!("🔐 {} (encrypted)", &obj[..obj.len() - 4])
+                        } else {
+                            obj.clone()
+                        };
+                        
+                        if ui.selectable_label(is_selected, label).clicked() {
                             self.selected_object = Some(obj.clone());
                             self.object_key = obj.clone();
                         }
@@ -263,7 +271,16 @@ impl DownloadTab {
         
         ui.add_space(10.0);
         
-        ui.checkbox(&mut self.decrypt_after_download, "🔐 Decrypt after download (requires PGP secret key)");
+        // Auto-decryption notice
+        if self.object_key.ends_with(".pgp") {
+            ui.horizontal(|ui| {
+                ui.colored_label(egui::Color32::from_rgb(255, 200, 0), "ℹ️");
+                ui.label("This file appears to be encrypted and will be auto-decrypted if you have the key.");
+            });
+            self.decrypt_after_download = true;
+        } else {
+            ui.checkbox(&mut self.decrypt_after_download, "🔐 Decrypt after download (requires PGP secret key)");
+        }
         
         ui.add_space(20.0);
         
@@ -383,7 +400,17 @@ impl DownloadTab {
                                 }
                                 
                                 ui.checkbox(&mut obj.selected, "");
-                                ui.label(&obj.relative_path);
+                                
+                                // Show encryption indicator
+                                ui.horizontal(|ui| {
+                                    if obj.relative_path.ends_with(".pgp") {
+                                        ui.colored_label(egui::Color32::from_rgb(255, 200, 0), "🔐");
+                                        let display_name = &obj.relative_path[..obj.relative_path.len() - 4];
+                                        ui.label(format!("{} (will auto-decrypt)", display_name));
+                                    } else {
+                                        ui.label(&obj.relative_path);
+                                    }
+                                });
                                 ui.end_row();
                             }
                         });
@@ -562,9 +589,21 @@ impl DownloadTab {
         let recent_downloads = self.recent_downloads.clone();
         
         std::thread::spawn(move || {
+            // Determine the suggested filename
+            let suggested_filename = if decrypt && (object_key.ends_with(".gpg") || object_key.ends_with(".pgp")) {
+                // Remove the encryption extension for decrypted files
+                if object_key.ends_with(".gpg") {
+                    object_key[..object_key.len() - 4].to_string()
+                } else {
+                    object_key[..object_key.len() - 4].to_string()
+                }
+            } else {
+                object_key.clone()
+            };
+            
             // Show file dialog
             let save_path = rfd::FileDialog::new()
-                .set_file_name(&object_key)
+                .set_file_name(&suggested_filename)
                 .save_file();
             
             if let Some(save_path) = save_path {

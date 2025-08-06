@@ -4,10 +4,5 @@
     "secret_access_key": "e78e0ff78b474d1d4f9d01dff1f5fb569abcea715eca1eeed42f55415c990e83",
     "account_id": "72a61d050034cb73f26694a75073f83a",
     "bucket_name": "nick"
-  },
-  "pgp": {
-    "public_key_path": "/Users/nicholas.kuntz/rust-r2/rust-r2/dev_public.key",
-    "secret_key_path": "/Users/nicholas.kuntz/rust-r2/rust-r2/dev_secret.key",
-    "passphrase": ""
   }
 }

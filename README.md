@@ -1,26 +1,36 @@
 # Rust R2 Tool
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![macOS Build](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml)
-[![Windows Build](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml)
-[![Debian/Ubuntu Build](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml)
-[![Fedora/RHEL Build](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml)
+[![Release Pipeline](https://github.com/SilentHeroes/rust-r2/actions/workflows/release.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/release.yml)
+[![Lint & Test](https://github.com/SilentHeroes/rust-r2/actions/workflows/lint.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/lint.yml)
+[![Security Audit](https://img.shields.io/badge/security-audit-green.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/lint.yml)
 
-**Secure, fast, cross-platform desktop app and CLI for Cloudflare R2 storage with end-to-end encryption.**
+**Enterprise-grade desktop application and CLI for Cloudflare R2 storage with end-to-end encryption and team collaboration features.**
 
 ## Download
 
 ### Latest Releases
 **[View All Releases →](https://github.com/SilentHeroes/rust-r2/releases)**
 
-Pre-built binaries are automatically generated for each platform:
+#### Professional Release Format
+Our automated release pipeline generates professionally-named binaries with:
+- **Version tracking** from Cargo.toml (semantic versioning)
+- **Build timestamps** for release tracking
+- **SHA256 checksums** for integrity verification
+- **Change detection** to prevent unnecessary builds
+- **Automated changelog** generation
 
-| Platform | Architecture | Status |
-|----------|--------------|--------|
-| **macOS** | Intel (x86_64) & Apple Silicon (ARM64) | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) |
-| **Windows** | x64 | [![Windows](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml) |
-| **Linux (Debian/Ubuntu)** | x64 | [![Debian/Ubuntu](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) |
-| **Linux (Fedora/RHEL)** | x64 | [![Fedora/RHEL](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml) |
+Example: `rust-r2_v0.1.0_20240805_macOS-x86_64.tar.gz`
+
+#### Platform Support
+Pre-built binaries are automatically generated when source code changes:
+
+| Platform | Architecture | Build Status | Download |
+|----------|--------------|--------------|----------|
+| **macOS** | Intel (x86_64) & Apple Silicon (ARM64) | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| **Windows** | x64 | [![Windows](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| **Linux (Debian/Ubuntu)** | x64 | [![Debian/Ubuntu](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| **Linux (Fedora/RHEL)** | x64 | [![Fedora/RHEL](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
 
 ## Quick Start
 
@@ -120,6 +130,26 @@ Pre-built binaries are automatically generated for each platform:
 
 [**Detailed Configuration Guide →**](docs/CONFIGURATION.md)
 
+## CI/CD Pipeline
+
+### Automated Quality Assurance
+Every push to main branch triggers:
+
+1. **Change Detection** - Only builds when source files change
+2. **Code Quality Checks**:
+   - `rustfmt` - Enforces consistent code formatting
+   - `clippy` - Catches common mistakes and suggests improvements
+   - `cargo test` - Runs all unit and integration tests
+   - `cargo audit` - Scans for security vulnerabilities
+3. **Multi-Platform Builds** - Parallel builds for all supported platforms
+4. **Professional Releases** - Automated versioning and changelog generation
+
+### Build Triggers
+Builds are triggered when changes are detected in:
+- `src/**` - Source code files
+- `Cargo.toml` - Dependencies and metadata
+- `Cargo.lock` - Dependency lock file
+
 ## Building from Source
 
 ```bash
@@ -130,6 +160,21 @@ cd rust-r2/rust-r2
 cargo build --release
 
 # Binaries in target/release/
+```
+
+### Development Commands
+```bash
+# Format code
+cargo fmt
+
+# Run linter
+cargo clippy -- -D warnings
+
+# Run tests
+cargo test
+
+# Security audit
+cargo audit
 ```
 
 [**Full Build Instructions →**](docs/INSTALLATION.md)
