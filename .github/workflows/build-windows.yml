@@ -1,0 +1,79 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: |
+          echo "Building for Windows x86_64"
+          cargo build --release --target x86_64-pc-windows-msvc
+          echo "Build completed successfully"
+
+      - name: Prepare binaries
+        run: |
+          mkdir release
+          copy target\x86_64-pc-windows-msvc\release\rust-r2-cli.exe release\
+          copy target\x86_64-pc-windows-msvc\release\rust-r2-gui.exe release\
+          Compress-Archive -Path release\* -DestinationPath rust-r2-Windows-x86_64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-r2-Windows-x86_64
+          path: rust-r2-Windows-x86_64.zip
+
+  create-release:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: windows-${{ github.run_number }}
+          name: Windows Build ${{ github.run_number }}
+          draft: false
+          prerelease: true
+          files: |
+            artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

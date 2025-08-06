@@ -2,7 +2,9 @@
 
 [![Release](https://img.shields.io/github/v/release/yourusername/rust-r2)](https://github.com/yourusername/rust-r2/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build](https://github.com/yourusername/rust-r2/actions/workflows/build.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions)
+[![macOS](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml)
+[![Windows](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml)
+[![Linux](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml)
 
 **Secure, fast, cross-platform desktop app and CLI for Cloudflare R2 storage with end-to-end encryption.**
 

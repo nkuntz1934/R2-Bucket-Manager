@@ -1,0 +1,118 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-20.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libssl-dev \
+            pkg-config \
+            libgtk-3-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libspeechd-dev \
+            libxkbcommon-dev \
+            libfontconfig1-dev \
+            libatk1.0-dev \
+            libgdk-pixbuf2.0-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: |
+          echo "Building for Linux x86_64"
+          echo "Rust version: $(rustc --version)"
+          cargo build --release --target x86_64-unknown-linux-gnu --verbose
+          echo "Build completed successfully"
+          
+          # List the output
+          echo "Checking build output:"
+          ls -la target/x86_64-unknown-linux-gnu/release/
+
+      - name: Prepare binaries
+        run: |
+          mkdir -p release
+          
+          # Copy binaries if they exist
+          if [ -f "target/x86_64-unknown-linux-gnu/release/rust-r2-cli" ]; then
+            cp target/x86_64-unknown-linux-gnu/release/rust-r2-cli release/
+            echo "✓ Copied rust-r2-cli"
+          else
+            echo "⚠️ rust-r2-cli not found!"
+            exit 1
+          fi
+          
+          if [ -f "target/x86_64-unknown-linux-gnu/release/rust-r2-gui" ]; then
+            cp target/x86_64-unknown-linux-gnu/release/rust-r2-gui release/
+            echo "✓ Copied rust-r2-gui"
+          else
+            echo "⚠️ rust-r2-gui not found!"
+            exit 1
+          fi
+          
+          # Create archive
+          tar czf rust-r2-Linux-x86_64.tar.gz -C release .
+          echo "✓ Created archive: rust-r2-Linux-x86_64.tar.gz"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-r2-Linux-x86_64
+          path: rust-r2-Linux-x86_64.tar.gz
+
+  create-release:
+    needs: build-linux
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: linux-${{ github.run_number }}
+          name: Linux Build ${{ github.run_number }}
+          draft: false
+          prerelease: true
+          files: |
+            artifacts/**/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
