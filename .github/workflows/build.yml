@@ -54,11 +54,38 @@ jobs:
         if: matrix.platform.os == 'ubuntu-20.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libssl-dev pkg-config libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libfontconfig1-dev
+          sudo apt-get install -y libssl-dev pkg-config libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libfontconfig1-dev libatk1.0-dev libgdk-pixbuf2.0-dev
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ matrix.platform.target }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: |
-          cargo build --release --target ${{ matrix.platform.target }}
+          echo "Building for target: ${{ matrix.platform.target }}"
+          echo "Current directory: $(pwd)"
+          echo "Cargo version: $(cargo --version)"
+          echo "Rustc version: $(rustc --version)"
+          cargo build --release --target ${{ matrix.platform.target }} --verbose 2>&1
+          echo "Build completed"
+          echo "Listing target directory:"
+          ls -la target/${{ matrix.platform.target }}/release/ || echo "Target directory not found"
+          echo "Checking for binary files:"
+          find target -name "rust-r2-*" -type f 2>/dev/null || echo "No binaries found"
 
       - name: Prepare binaries (Windows)
         if: matrix.platform.os == 'windows-latest'
@@ -71,10 +98,33 @@ jobs:
       - name: Prepare binaries (Unix)
         if: matrix.platform.os != 'windows-latest'
         run: |
-          mkdir release
-          cp target/${{ matrix.platform.target }}/release/rust-r2-cli release/ || true
-          cp target/${{ matrix.platform.target }}/release/rust-r2-gui release/ || true
+          echo "Preparing binaries for ${{ matrix.platform.release_for }}"
+          mkdir -p release
+          
+          # Check if binaries exist
+          echo "Checking for binaries in target/${{ matrix.platform.target }}/release/"
+          ls -la target/${{ matrix.platform.target }}/release/ || echo "Failed to list target directory"
+          
+          # Copy binaries if they exist
+          if [ -f "target/${{ matrix.platform.target }}/release/rust-r2-cli" ]; then
+            cp target/${{ matrix.platform.target }}/release/rust-r2-cli release/
+            echo "Copied rust-r2-cli"
+          else
+            echo "Warning: rust-r2-cli not found"
+          fi
+          
+          if [ -f "target/${{ matrix.platform.target }}/release/rust-r2-gui" ]; then
+            cp target/${{ matrix.platform.target }}/release/rust-r2-gui release/
+            echo "Copied rust-r2-gui"
+          else
+            echo "Warning: rust-r2-gui not found"
+          fi
+          
+          # Create archive
+          echo "Creating archive..."
           tar czf rust-r2-${{ matrix.platform.release_for }}.tar.gz -C release .
+          echo "Archive created: rust-r2-${{ matrix.platform.release_for }}.tar.gz"
+          ls -la rust-r2-${{ matrix.platform.release_for }}.tar.gz
 
       - name: Upload artifact (Windows)
         if: matrix.platform.os == 'windows-latest'
