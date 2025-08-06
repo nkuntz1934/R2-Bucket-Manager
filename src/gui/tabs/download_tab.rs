@@ -1,10 +1,10 @@
 use crate::app::AppState;
-use eframe::egui;
-use std::sync::{Arc, Mutex};
-use std::path::PathBuf;
-use tokio::runtime::Runtime;
-use std::collections::HashSet;
 use chrono::Local;
+use eframe::egui;
+use std::collections::HashSet;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use tokio::runtime::Runtime;
 
 #[derive(Clone, Default)]
 struct DownloadState {
@@ -79,19 +79,22 @@ impl DownloadTab {
             filter_text: String::new(),
         }
     }
-    
+
     pub fn show(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.heading("Download Files from R2");
         ui.separator();
-        
+
         let is_connected = self.state.lock().unwrap().is_connected;
-        
+
         if !is_connected {
-            ui.colored_label(egui::Color32::YELLOW, "⚠️ Please configure and test connection first");
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠️ Please configure and test connection first",
+            );
             self.needs_refresh = true; // Reset for next connection
             return;
         }
-        
+
         // Auto-refresh on first view
         if self.needs_refresh {
             let is_loading = self.download_state.lock().unwrap().loading;
@@ -100,32 +103,42 @@ impl DownloadTab {
                 self.trigger_refresh(ctx);
             }
         }
-        
+
         // Download mode selector
         ui.horizontal(|ui| {
             ui.label("Download Mode:");
-            if ui.selectable_value(&mut self.download_mode, DownloadMode::SingleFile, "📄 Single File").clicked() {
+            if ui
+                .selectable_value(
+                    &mut self.download_mode,
+                    DownloadMode::SingleFile,
+                    "📄 Single File",
+                )
+                .clicked()
+            {
                 self.folder_objects.lock().unwrap().clear();
                 self.folder_prefix.clear();
             }
-            if ui.selectable_value(&mut self.download_mode, DownloadMode::Folder, "📁 Folder").clicked() {
+            if ui
+                .selectable_value(&mut self.download_mode, DownloadMode::Folder, "📁 Folder")
+                .clicked()
+            {
                 self.object_key.clear();
                 self.selected_object = None;
             }
         });
-        
+
         ui.add_space(10.0);
-        
+
         match self.download_mode {
             DownloadMode::SingleFile => self.show_single_file_download(ui, ctx),
             DownloadMode::Folder => self.show_folder_download(ui, ctx),
         }
-        
+
         // Download History Section
         ui.add_space(20.0);
         ui.separator();
         ui.heading("Recent Downloads");
-        
+
         // Show download statistics
         {
             let recent = self.recent_downloads.lock().unwrap();
@@ -133,7 +146,7 @@ impl DownloadTab {
                 let total = recent.len();
                 let successful = recent.iter().filter(|d| d.success).count();
                 let failed = total - successful;
-                
+
                 ui.horizontal(|ui| {
                     ui.label(format!("Total: {} downloads", total));
                     ui.separator();
@@ -150,64 +163,71 @@ impl DownloadTab {
                 ui.add_space(5.0);
             }
         }
-        
-        egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-            let recent = self.recent_downloads.lock().unwrap().clone();
-            if recent.is_empty() {
-                ui.label("No recent downloads yet");
-            } else {
-                egui::Grid::new("recent_downloads_grid")
-                    .num_columns(4)
-                    .striped(true)
-                    .spacing([20.0, 4.0])
-                    .show(ui, |ui| {
-                        ui.strong("Time");
-                        ui.strong("Object Key");
-                        ui.strong("Status");
-                        ui.strong("Decrypted");
-                        ui.end_row();
-                        
-                        // Show most recent first, limit display to 25 for performance
-                        let display_limit = 25;
-                        for download in recent.iter().rev().take(display_limit) {
-                            ui.label(download.timestamp.format("%H:%M:%S").to_string());
-                            ui.label(&download.object_key);
-                            if download.success {
-                                ui.colored_label(egui::Color32::GREEN, "✓ Success");
-                            } else {
-                                ui.colored_label(egui::Color32::RED, "✗ Failed");
+
+        egui::ScrollArea::vertical()
+            .max_height(200.0)
+            .show(ui, |ui| {
+                let recent = self.recent_downloads.lock().unwrap().clone();
+                if recent.is_empty() {
+                    ui.label("No recent downloads yet");
+                } else {
+                    egui::Grid::new("recent_downloads_grid")
+                        .num_columns(4)
+                        .striped(true)
+                        .spacing([20.0, 4.0])
+                        .show(ui, |ui| {
+                            ui.strong("Time");
+                            ui.strong("Object Key");
+                            ui.strong("Status");
+                            ui.strong("Decrypted");
+                            ui.end_row();
+
+                            // Show most recent first, limit display to 25 for performance
+                            let display_limit = 25;
+                            for download in recent.iter().rev().take(display_limit) {
+                                ui.label(download.timestamp.format("%H:%M:%S").to_string());
+                                ui.label(&download.object_key);
+                                if download.success {
+                                    ui.colored_label(egui::Color32::GREEN, "✓ Success");
+                                } else {
+                                    ui.colored_label(egui::Color32::RED, "✗ Failed");
+                                }
+                                ui.label(if download.decrypted { "🔓 Yes" } else { "No" });
+                                ui.end_row();
                             }
-                            ui.label(if download.decrypted { "🔓 Yes" } else { "No" });
-                            ui.end_row();
-                        }
-                        
-                        if recent.len() > display_limit {
-                            ui.label("");
-                            ui.label(format!("... and {} more", recent.len() - display_limit));
-                            ui.label("");
-                            ui.label("");
-                            ui.end_row();
-                        }
-                    });
-            }
-        });
+
+                            if recent.len() > display_limit {
+                                ui.label("");
+                                ui.label(format!("... and {} more", recent.len() - display_limit));
+                                ui.label("");
+                                ui.label("");
+                                ui.end_row();
+                            }
+                        });
+                }
+            });
     }
-    
+
     fn show_single_file_download(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         // Object selection
         ui.horizontal(|ui| {
             ui.label("Object Key:");
             ui.text_edit_singleline(&mut self.object_key);
-            
+
             if ui.button("📋 Select from list").clicked() {
                 self.selected_object = None;
             }
         });
-        
+
         // Available objects list
         let (is_loading, error_msg, objects, last_refresh) = {
             let state = self.download_state.lock().unwrap();
-            (state.loading, state.error.clone(), state.objects.clone(), state.last_refresh)
+            (
+                state.loading,
+                state.error.clone(),
+                state.objects.clone(),
+                state.last_refresh,
+            )
         };
         if is_loading {
             ui.spinner();
@@ -221,41 +241,41 @@ impl DownloadTab {
         } else if !objects.is_empty() {
             ui.separator();
             ui.label(format!("{} objects available:", objects.len()));
-            
+
             egui::ScrollArea::vertical()
                 .max_height(200.0)
                 .show(ui, |ui| {
                     for obj in &objects {
                         let is_selected = self.selected_object.as_ref() == Some(obj);
-                        
+
                         // Show with encryption indicator
                         let label = if obj.ends_with(".pgp") {
                             format!("🔐 {} (encrypted)", &obj[..obj.len() - 4])
                         } else {
                             obj.clone()
                         };
-                        
+
                         if ui.selectable_label(is_selected, label).clicked() {
                             self.selected_object = Some(obj.clone());
                             self.object_key = obj.clone();
                         }
                     }
                 });
-                
+
             ui.horizontal(|ui| {
                 if ui.button("🔄 Refresh").clicked() {
                     self.trigger_refresh(ctx);
                 }
-                
+
                 if let Some(last_refresh) = last_refresh {
                     let elapsed = last_refresh.elapsed().as_secs();
                     ui.label(format!("Last refresh: {}s ago", elapsed));
                 }
             });
         }
-        
+
         ui.separator();
-        
+
         // Quick actions
         ui.horizontal(|ui| {
             if self.selected_object.is_some() {
@@ -268,9 +288,9 @@ impl DownloadTab {
                 }
             }
         });
-        
+
         ui.add_space(10.0);
-        
+
         // Auto-decryption notice
         if self.object_key.ends_with(".pgp") {
             ui.horizontal(|ui| {
@@ -279,11 +299,14 @@ impl DownloadTab {
             });
             self.decrypt_after_download = true;
         } else {
-            ui.checkbox(&mut self.decrypt_after_download, "🔐 Decrypt after download (requires PGP secret key)");
+            ui.checkbox(
+                &mut self.decrypt_after_download,
+                "🔐 Decrypt after download (requires PGP secret key)",
+            );
         }
-        
+
         ui.add_space(20.0);
-        
+
         let is_downloading = *self.download_in_progress.lock().unwrap();
         if is_downloading {
             let progress = *self.download_progress.lock().unwrap();
@@ -297,46 +320,52 @@ impl DownloadTab {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         } else {
             let can_download = !self.object_key.is_empty();
-            if ui.add_enabled(can_download, egui::Button::new("⬇️ Download from R2")).clicked() {
+            if ui
+                .add_enabled(can_download, egui::Button::new("⬇️ Download from R2"))
+                .clicked()
+            {
                 self.start_single_download(ctx);
             }
         }
     }
-    
+
     fn show_folder_download(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         // Extract available folders from objects
         let folders = self.extract_folders();
-        
+
         if !folders.is_empty() {
             ui.label("Select folder to download:");
-            
+
             egui::ScrollArea::vertical()
                 .max_height(150.0)
                 .show(ui, |ui| {
                     for folder in &folders {
                         let is_selected = self.selected_folder.as_ref() == Some(folder);
-                        if ui.selectable_label(is_selected, format!("📁 {}", folder)).clicked() {
+                        if ui
+                            .selectable_label(is_selected, format!("📁 {}", folder))
+                            .clicked()
+                        {
                             self.selected_folder = Some(folder.clone());
                             self.folder_prefix = folder.clone();
                             self.load_folder_contents(ctx);
                         }
                     }
                 });
-            
+
             ui.separator();
         }
-        
+
         ui.horizontal(|ui| {
             ui.label("Or enter folder prefix manually:");
             ui.text_edit_singleline(&mut self.folder_prefix);
-            
+
             if ui.button("🔍 Load Folder Contents").clicked() {
                 self.load_folder_contents(ctx);
             }
         });
-        
+
         ui.add_space(10.0);
-        
+
         ui.horizontal(|ui| {
             ui.label("Save to Folder:");
             if let Some(ref path) = self.save_folder {
@@ -350,17 +379,20 @@ impl DownloadTab {
                 }
             }
         });
-        
+
         ui.add_space(10.0);
-        
-        ui.checkbox(&mut self.decrypt_after_download, "🔐 Decrypt all files after download");
-        
+
+        ui.checkbox(
+            &mut self.decrypt_after_download,
+            "🔐 Decrypt all files after download",
+        );
+
         // Show folder contents if loaded
         let has_contents = !self.folder_objects.lock().unwrap().is_empty();
         if has_contents {
             ui.add_space(10.0);
             ui.separator();
-            
+
             let folder_count = self.folder_objects.lock().unwrap().len();
             ui.horizontal(|ui| {
                 ui.heading(format!("📁 Folder Contents ({} files)", folder_count));
@@ -379,7 +411,7 @@ impl DownloadTab {
                 ui.label("Filter:");
                 ui.text_edit_singleline(&mut self.filter_text);
             });
-            
+
             egui::ScrollArea::vertical()
                 .max_height(300.0)
                 .show(ui, |ui| {
@@ -391,21 +423,27 @@ impl DownloadTab {
                             ui.strong("Select");
                             ui.strong("File");
                             ui.end_row();
-                            
+
                             let filter = self.filter_text.to_lowercase();
                             let mut folder_objs = self.folder_objects.lock().unwrap();
                             for obj in folder_objs.iter_mut() {
-                                if !filter.is_empty() && !obj.relative_path.to_lowercase().contains(&filter) {
+                                if !filter.is_empty()
+                                    && !obj.relative_path.to_lowercase().contains(&filter)
+                                {
                                     continue;
                                 }
-                                
+
                                 ui.checkbox(&mut obj.selected, "");
-                                
+
                                 // Show encryption indicator
                                 ui.horizontal(|ui| {
                                     if obj.relative_path.ends_with(".pgp") {
-                                        ui.colored_label(egui::Color32::from_rgb(255, 200, 0), "🔐");
-                                        let display_name = &obj.relative_path[..obj.relative_path.len() - 4];
+                                        ui.colored_label(
+                                            egui::Color32::from_rgb(255, 200, 0),
+                                            "🔐",
+                                        );
+                                        let display_name =
+                                            &obj.relative_path[..obj.relative_path.len() - 4];
                                         ui.label(format!("{} (will auto-decrypt)", display_name));
                                     } else {
                                         ui.label(&obj.relative_path);
@@ -415,13 +453,19 @@ impl DownloadTab {
                             }
                         });
                 });
-            
-            let selected_count = self.folder_objects.lock().unwrap().iter().filter(|o| o.selected).count();
+
+            let selected_count = self
+                .folder_objects
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|o| o.selected)
+                .count();
             ui.label(format!("Selected: {} files", selected_count));
         }
-        
+
         ui.add_space(20.0);
-        
+
         let is_downloading = *self.download_in_progress.lock().unwrap();
         if is_downloading {
             let progress = *self.download_progress.lock().unwrap();
@@ -434,18 +478,29 @@ impl DownloadTab {
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         } else {
-            let has_selected = self.folder_objects.lock().unwrap().iter().any(|o| o.selected);
+            let has_selected = self
+                .folder_objects
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|o| o.selected);
             let can_download = has_selected && self.save_folder.is_some();
-            if ui.add_enabled(can_download, egui::Button::new("⬇️ Download Selected Files")).clicked() {
+            if ui
+                .add_enabled(
+                    can_download,
+                    egui::Button::new("⬇️ Download Selected Files"),
+                )
+                .clicked()
+            {
                 self.start_folder_download(ctx);
             }
         }
     }
-    
+
     fn extract_folders(&self) -> Vec<String> {
         let state = self.download_state.lock().unwrap();
         let mut folders = HashSet::new();
-        
+
         for obj in &state.objects {
             if let Some(pos) = obj.rfind('/') {
                 let folder = &obj[..=pos];
@@ -457,41 +512,46 @@ impl DownloadTab {
                 }
             }
         }
-        
+
         let mut folder_list: Vec<String> = folders.into_iter().collect();
         folder_list.sort();
         folder_list
     }
-    
+
     fn trigger_refresh(&mut self, ctx: &egui::Context) {
         let state = self.state.clone();
         let download_state = self.download_state.clone();
         let runtime = self.runtime.clone();
         let ctx = ctx.clone();
-        
+
         {
             let mut ds = download_state.lock().unwrap();
             ds.loading = true;
             ds.error = None;
         }
-        
+
         std::thread::spawn(move || {
             runtime.block_on(async {
                 let result = async {
-                    let client = state.lock().unwrap().r2_client.clone()
+                    let client = state
+                        .lock()
+                        .unwrap()
+                        .r2_client
+                        .clone()
                         .ok_or_else(|| anyhow::anyhow!("No R2 client available"))?;
-                    
+
                     let objects = client.list_objects(None).await?;
                     Ok::<Vec<String>, anyhow::Error>(objects)
-                }.await;
-                
+                }
+                .await;
+
                 let mut ds = download_state.lock().unwrap();
                 ds.loading = false;
                 match result {
                     Ok(objects) => {
                         ds.objects = objects.clone();
                         ds.last_refresh = Some(std::time::Instant::now());
-                        
+
                         // Extract unique folder prefixes
                         let mut folders = std::collections::HashSet::new();
                         for obj in &objects {
@@ -500,7 +560,8 @@ impl DownloadTab {
                                 // Also add parent folders
                                 let parts: Vec<&str> = folder.split('/').collect();
                                 for i in 1..=parts.len() {
-                                    if i < parts.len() {  // Don't include the full path
+                                    if i < parts.len() {
+                                        // Don't include the full path
                                         let partial = parts[..i].join("/") + "/";
                                         folders.insert(partial);
                                     }
@@ -513,35 +574,40 @@ impl DownloadTab {
                         ds.error = Some(e.to_string());
                     }
                 }
-                
+
                 ctx.request_repaint();
             });
         });
     }
-    
+
     fn load_folder_contents(&mut self, ctx: &egui::Context) {
         if self.folder_prefix.is_empty() {
             return;
         }
-        
+
         self.folder_objects.lock().unwrap().clear();
-        
+
         let state = self.state.clone();
         let runtime = self.runtime.clone();
         let folder_prefix = self.folder_prefix.clone();
         let ctx = ctx.clone();
         let folder_objects = self.folder_objects.clone();
-        
+
         std::thread::spawn(move || {
             runtime.block_on(async {
                 let result = async {
-                    let client = state.lock().unwrap().r2_client.clone()
+                    let client = state
+                        .lock()
+                        .unwrap()
+                        .r2_client
+                        .clone()
                         .ok_or_else(|| anyhow::anyhow!("No R2 client available"))?;
-                    
+
                     let objects = client.list_objects(Some(&folder_prefix)).await?;
                     Ok::<Vec<String>, anyhow::Error>(objects)
-                }.await;
-                
+                }
+                .await;
+
                 if let Ok(objects) = result {
                     let mut folder_objs = folder_objects.lock().unwrap();
                     for key in objects {
@@ -551,7 +617,7 @@ impl DownloadTab {
                         } else {
                             key.clone()
                         };
-                        
+
                         folder_objs.push(FolderObject {
                             key,
                             relative_path,
@@ -559,12 +625,12 @@ impl DownloadTab {
                         });
                     }
                 }
-                
+
                 ctx.request_repaint();
             });
         });
     }
-    
+
     fn start_single_download(&mut self, ctx: &egui::Context) {
         // Check if already downloading
         {
@@ -574,10 +640,10 @@ impl DownloadTab {
             }
             *downloading = true;
         }
-        
+
         *self.download_progress.lock().unwrap() = 0.0;
         *self.current_download_file.lock().unwrap() = self.object_key.clone();
-        
+
         let state = self.state.clone();
         let runtime = self.runtime.clone();
         let object_key = self.object_key.clone();
@@ -587,42 +653,47 @@ impl DownloadTab {
         let download_progress = self.download_progress.clone();
         let current_download_file = self.current_download_file.clone();
         let recent_downloads = self.recent_downloads.clone();
-        
+
         std::thread::spawn(move || {
             // Determine the suggested filename
-            let suggested_filename = if decrypt && (object_key.ends_with(".gpg") || object_key.ends_with(".pgp")) {
-                // Remove the encryption extension for decrypted files
-                if object_key.ends_with(".gpg") {
-                    object_key[..object_key.len() - 4].to_string()
+            let suggested_filename =
+                if decrypt && (object_key.ends_with(".gpg") || object_key.ends_with(".pgp")) {
+                    // Remove the encryption extension for decrypted files
+                    if object_key.ends_with(".gpg") {
+                        object_key[..object_key.len() - 4].to_string()
+                    } else {
+                        object_key[..object_key.len() - 4].to_string()
+                    }
                 } else {
-                    object_key[..object_key.len() - 4].to_string()
-                }
-            } else {
-                object_key.clone()
-            };
-            
+                    object_key.clone()
+                };
+
             // Show file dialog
             let save_path = rfd::FileDialog::new()
                 .set_file_name(&suggested_filename)
                 .save_file();
-            
+
             if let Some(save_path) = save_path {
                 runtime.block_on(async {
                     *download_progress.lock().unwrap() = 0.1;
                     ctx.request_repaint();
-                    
+
                     let result = async {
-                        let client = state.lock().unwrap().r2_client.clone()
+                        let client = state
+                            .lock()
+                            .unwrap()
+                            .r2_client
+                            .clone()
                             .ok_or_else(|| anyhow::anyhow!("No R2 client available"))?;
-                        
+
                         *download_progress.lock().unwrap() = 0.3;
                         ctx.request_repaint();
-                        
+
                         let data = client.download_object(&object_key).await?;
-                        
+
                         *download_progress.lock().unwrap() = 0.7;
                         ctx.request_repaint();
-                        
+
                         let final_data = if decrypt {
                             let pgp_handler = state.lock().unwrap().pgp_handler.clone();
                             let decrypted = {
@@ -633,18 +704,19 @@ impl DownloadTab {
                         } else {
                             data.to_vec()
                         };
-                        
+
                         *download_progress.lock().unwrap() = 0.9;
                         ctx.request_repaint();
-                        
+
                         std::fs::write(&save_path, final_data)?;
-                        
+
                         *download_progress.lock().unwrap() = 1.0;
                         ctx.request_repaint();
-                        
+
                         Ok::<(), anyhow::Error>(())
-                    }.await;
-                    
+                    }
+                    .await;
+
                     // Record download
                     let download_record = DownloadRecord {
                         object_key: object_key.clone(),
@@ -653,13 +725,13 @@ impl DownloadTab {
                         timestamp: Local::now(),
                         success: result.is_ok(),
                     };
-                    
+
                     // Add to recent downloads - no limit
                     {
                         let mut downloads = recent_downloads.lock().unwrap();
                         downloads.push(download_record);
                     }
-                    
+
                     match result {
                         Ok(_) => {
                             let mut state = state.lock().unwrap();
@@ -670,7 +742,7 @@ impl DownloadTab {
                             state.status_message = format!("✗ Download failed: {}", e);
                         }
                     }
-                    
+
                     *download_in_progress.lock().unwrap() = false;
                     *current_download_file.lock().unwrap() = String::new();
                     ctx.request_repaint();
@@ -681,18 +753,21 @@ impl DownloadTab {
             }
         });
     }
-    
+
     fn start_folder_download(&mut self, ctx: &egui::Context) {
-        let selected_objects: Vec<FolderObject> = self.folder_objects.lock().unwrap()
+        let selected_objects: Vec<FolderObject> = self
+            .folder_objects
+            .lock()
+            .unwrap()
             .iter()
             .filter(|o| o.selected)
             .cloned()
             .collect();
-        
+
         if selected_objects.is_empty() || self.save_folder.is_none() {
             return;
         }
-        
+
         // Check if already downloading
         {
             let mut downloading = self.download_in_progress.lock().unwrap();
@@ -701,9 +776,9 @@ impl DownloadTab {
             }
             *downloading = true;
         }
-        
+
         *self.download_progress.lock().unwrap() = 0.0;
-        
+
         let state = self.state.clone();
         let runtime = self.runtime.clone();
         let save_folder = self.save_folder.clone().unwrap();
@@ -713,24 +788,24 @@ impl DownloadTab {
         let download_progress = self.download_progress.clone();
         let current_download_file = self.current_download_file.clone();
         let recent_downloads = self.recent_downloads.clone();
-        
+
         std::thread::spawn(move || {
             runtime.block_on(async {
                 let total_files = selected_objects.len();
                 let mut completed_files = 0;
                 let mut success_count = 0;
                 let mut failed_count = 0;
-                
+
                 for obj in selected_objects {
                     *current_download_file.lock().unwrap() = obj.relative_path.clone();
-                    
+
                     let progress = completed_files as f32 / total_files as f32;
                     *download_progress.lock().unwrap() = progress;
                     ctx.request_repaint();
-                    
+
                     // Create the full path for saving
                     let save_path = save_folder.join(&obj.relative_path);
-                    
+
                     // Create parent directories if needed
                     if let Some(parent) = save_path.parent() {
                         if let Err(e) = std::fs::create_dir_all(parent) {
@@ -740,13 +815,17 @@ impl DownloadTab {
                             continue;
                         }
                     }
-                    
+
                     let result = async {
-                        let client = state.lock().unwrap().r2_client.clone()
+                        let client = state
+                            .lock()
+                            .unwrap()
+                            .r2_client
+                            .clone()
                             .ok_or_else(|| anyhow::anyhow!("No R2 client available"))?;
-                        
+
                         let data = client.download_object(&obj.key).await?;
-                        
+
                         let final_data = if decrypt {
                             let pgp_handler = state.lock().unwrap().pgp_handler.clone();
                             let decrypted = {
@@ -757,12 +836,13 @@ impl DownloadTab {
                         } else {
                             data.to_vec()
                         };
-                        
+
                         std::fs::write(&save_path, final_data)?;
-                        
+
                         Ok::<(), anyhow::Error>(())
-                    }.await;
-                    
+                    }
+                    .await;
+
                     // Record download
                     let download_record = DownloadRecord {
                         object_key: obj.key.clone(),
@@ -771,13 +851,13 @@ impl DownloadTab {
                         timestamp: Local::now(),
                         success: result.is_ok(),
                     };
-                    
+
                     // Add to recent downloads
                     {
                         let mut downloads = recent_downloads.lock().unwrap();
                         downloads.push(download_record);
                     }
-                    
+
                     match result {
                         Ok(_) => success_count += 1,
                         Err(e) => {
@@ -785,23 +865,27 @@ impl DownloadTab {
                             failed_count += 1;
                         }
                     }
-                    
+
                     completed_files += 1;
                 }
-                
+
                 *download_progress.lock().unwrap() = 1.0;
                 ctx.request_repaint();
-                
+
                 // Update status message
                 {
                     let mut state = state.lock().unwrap();
                     if failed_count == 0 {
-                        state.status_message = format!("✓ Downloaded {} files to folder", success_count);
+                        state.status_message =
+                            format!("✓ Downloaded {} files to folder", success_count);
                     } else {
-                        state.status_message = format!("Downloaded {} files, {} failed", success_count, failed_count);
+                        state.status_message = format!(
+                            "Downloaded {} files, {} failed",
+                            success_count, failed_count
+                        );
                     }
                 }
-                
+
                 *download_in_progress.lock().unwrap() = false;
                 *current_download_file.lock().unwrap() = String::new();
                 ctx.request_repaint();

@@ -1,4 +1,4 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -46,12 +46,12 @@ fn default_true() -> bool {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PgpConfig {
     #[serde(default)]
-    pub team_keys: Vec<String>,  // Simple list of team key paths
+    pub team_keys: Vec<String>, // Simple list of team key paths
     #[serde(default)]
     pub secret_key_path: Option<String>, // Your secret key for decryption
     #[serde(default)]
     pub passphrase: Option<String>,
-    
+
     // Legacy fields for backward compatibility
     #[serde(default)]
     pub public_key_paths: Vec<String>,
@@ -61,12 +61,11 @@ pub struct PgpConfig {
 
 impl Config {
     pub fn from_file(path: &Path) -> Result<Self> {
-        let content = fs::read_to_string(path)
-            .context("Failed to read config file")?;
-        
-        let config: Config = serde_json::from_str(&content)
-            .context("Failed to parse config file")?;
-        
+        let content = fs::read_to_string(path).context("Failed to read config file")?;
+
+        let config: Config =
+            serde_json::from_str(&content).context("Failed to parse config file")?;
+
         Ok(config)
     }
 
@@ -88,12 +87,10 @@ impl Config {
 
     #[allow(dead_code)]
     pub fn save_to_file(&self, path: &Path) -> Result<()> {
-        let content = serde_json::to_string_pretty(self)
-            .context("Failed to serialize config")?;
-        
-        fs::write(path, content)
-            .context("Failed to write config file")?;
-        
+        let content = serde_json::to_string_pretty(self).context("Failed to serialize config")?;
+
+        fs::write(path, content).context("Failed to write config file")?;
+
         Ok(())
     }
 }
