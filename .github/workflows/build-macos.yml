@@ -3,6 +3,11 @@ name: Build macOS
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/build-macos.yml'
   workflow_dispatch:
 
 env:
@@ -61,30 +66,3 @@ jobs:
           name: rust-r2-macOS-${{ matrix.target }}
           path: rust-r2-macOS-*.tar.gz
 
-  create-release:
-    needs: build-macos
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: macos-${{ github.run_number }}
-          name: macOS Build ${{ github.run_number }}
-          draft: false
-          prerelease: true
-          files: |
-            artifacts/**/*.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -3,6 +3,11 @@ name: Build Windows
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/build-windows.yml'
   workflow_dispatch:
 
 env:
@@ -50,30 +55,3 @@ jobs:
           name: rust-r2-Windows-x86_64
           path: rust-r2-Windows-x86_64.zip
 
-  create-release:
-    needs: build-windows
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: windows-${{ github.run_number }}
-          name: Windows Build ${{ github.run_number }}
-          draft: false
-          prerelease: true
-          files: |
-            artifacts/**/*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
