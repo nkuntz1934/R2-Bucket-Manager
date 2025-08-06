@@ -2,8 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Release Pipeline](https://github.com/SilentHeroes/rust-r2/actions/workflows/release.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/release.yml)
-[![Lint & Test](https://github.com/SilentHeroes/rust-r2/actions/workflows/lint.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/lint.yml)
-[![Security Audit](https://img.shields.io/badge/security-audit-green.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/lint.yml)
+[![Latest Release](https://img.shields.io/github/v/release/SilentHeroes/rust-r2)](https://github.com/SilentHeroes/rust-r2/releases/latest)
+[![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](https://github.com/SilentHeroes/rust-r2/releases)
 
 **Enterprise-grade desktop application and CLI for Cloudflare R2 storage with end-to-end encryption and team collaboration features.**
 
@@ -12,15 +12,17 @@
 ### Latest Releases
 **[View All Releases →](https://github.com/SilentHeroes/rust-r2/releases)**
 
-#### Professional Release Format
-Our automated release pipeline generates professionally-named binaries with:
-- **Version tracking** from Cargo.toml (semantic versioning)
-- **Build timestamps** for release tracking
-- **SHA256 checksums** for integrity verification
-- **Change detection** to prevent unnecessary builds
-- **Automated changelog** generation
+#### Automated Release System
+Our streamlined CI/CD pipeline automatically builds and releases when source code changes are detected:
 
-Example: `rust-r2_v0.1.0_20240805_macOS-x86_64.tar.gz`
+- **Smart Build Triggers** - Only builds when `src/`, `Cargo.toml`, or `Cargo.lock` changes
+- **Professional Naming** - Format: `rust-r2_v{version}_{date}_{platform}`
+- **Multi-Platform Support** - Simultaneous builds for all platforms
+- **Unified Releases** - All platform binaries in a single GitHub release
+- **Automatic Changelog** - Generated from recent commit messages
+- **SHA256 Checksums** - Included for security verification
+
+Example: `rust-r2_v0.1.0_20240806_macOS-ARM.tar.gz`
 
 #### Platform Support
 Pre-built binaries are automatically generated when source code changes:
@@ -29,8 +31,7 @@ Pre-built binaries are automatically generated when source code changes:
 |----------|--------------|--------------|----------|
 | **macOS** | Intel (x86_64) & Apple Silicon (ARM64) | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
 | **Windows** | x64 | [![Windows](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
-| **Linux (Debian/Ubuntu)** | x64 | [![Debian/Ubuntu](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
-| **Linux (Fedora/RHEL)** | x64 | [![Fedora/RHEL](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| **Linux** | x64 (Ubuntu/Debian) | [![Linux](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
 
 ## Quick Start
 
@@ -132,23 +133,22 @@ Pre-built binaries are automatically generated when source code changes:
 
 ## CI/CD Pipeline
 
-### Automated Quality Assurance
-Every push to main branch triggers:
+### Automated Build & Release
+Our GitHub Actions pipeline automatically handles the entire release process:
 
-1. **Change Detection** - Only builds when source files change
-2. **Code Quality Checks**:
-   - `rustfmt` - Enforces consistent code formatting
-   - `clippy` - Catches common mistakes and suggests improvements
-   - `cargo test` - Runs all unit and integration tests
-   - `cargo audit` - Scans for security vulnerabilities
-3. **Multi-Platform Builds** - Parallel builds for all supported platforms
-4. **Professional Releases** - Automated versioning and changelog generation
+1. **Smart Change Detection** - Monitors source files and only builds when needed
+2. **Parallel Platform Builds** - All platforms build simultaneously for faster releases
+3. **Unified Release Creation** - Single release with all platform binaries
+4. **Automatic Versioning** - Uses version from `Cargo.toml` with build date
+5. **Changelog Generation** - Automatically generated from commit history
 
 ### Build Triggers
-Builds are triggered when changes are detected in:
-- `src/**` - Source code files
-- `Cargo.toml` - Dependencies and metadata
-- `Cargo.lock` - Dependency lock file
+The release pipeline activates when changes are pushed to:
+- `src/**` - Any source code modifications
+- `Cargo.toml` - Version or dependency updates
+- `Cargo.lock` - Locked dependency changes
+
+You can also manually trigger builds using the "Run workflow" button in GitHub Actions.
 
 ## Building from Source
 
@@ -167,14 +167,17 @@ cargo build --release
 # Format code
 cargo fmt
 
+# Check formatting
+cargo fmt --check
+
 # Run linter
-cargo clippy -- -D warnings
+cargo clippy
 
 # Run tests
 cargo test
 
-# Security audit
-cargo audit
+# Build locally
+cargo build --release
 ```
 
 [**Full Build Instructions →**](docs/INSTALLATION.md)
@@ -187,13 +190,28 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 MIT License - see [LICENSE](LICENSE) file.
 
+## Project Status
+
+### Recent Updates (August 2024)
+- ✅ Professional CI/CD pipeline with automated releases
+- ✅ Multi-platform simultaneous builds
+- ✅ Smart change detection to optimize build times
+- ✅ Cleaned repository - removed test scripts and artifacts
+- ✅ Professional release naming convention
+- ✅ Unified release system with all platforms in one release
+
 ## Links
 
-- [Releases](https://github.com/SilentHeroes/rust-r2/releases)
-- [GitHub Actions (Builds)](https://github.com/SilentHeroes/rust-r2/actions)
-- [Issues](https://github.com/SilentHeroes/rust-r2/issues)
-- [Cloudflare R2 Docs](https://developers.cloudflare.com/r2/)
+### Project
+- [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest)
+- [All Releases](https://github.com/SilentHeroes/rust-r2/releases)
+- [Build Status](https://github.com/SilentHeroes/rust-r2/actions)
+- [Report Issues](https://github.com/SilentHeroes/rust-r2/issues)
+
+### Documentation
+- [Cloudflare R2](https://developers.cloudflare.com/r2/)
 - [OpenPGP Standard](https://www.openpgp.org/)
+- [Rust Documentation](https://www.rust-lang.org/learn)
 
 ---
 
