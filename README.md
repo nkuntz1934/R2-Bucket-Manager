@@ -44,13 +44,11 @@ Pre-built binaries are automatically generated when source code changes:
 
 ## Documentation
 
-| Essential Guides | Advanced Topics | Development |
-|-----------------|-----------------|-------------|
-| [**Quick Start Guide**](docs/QUICK_START.md) | [Encryption & Security](docs/ENCRYPTION.md) | [Contributing](CONTRIBUTING.md) |
-| [**Installation**](docs/INSTALLATION.md) | [Performance Tips](docs/USER_GUIDE.md#performance-tips) | [Building from Source](docs/INSTALLATION.md#installation-steps) |
-| [**Configuration**](docs/CONFIGURATION.md) | [Automation Scripts](docs/CLI_REFERENCE.md#examples) | [Architecture](docs/ARCHITECTURE.md) |
-| [**User Guide**](docs/USER_GUIDE.md) | [Troubleshooting](docs/USER_GUIDE.md#troubleshooting) | [API Reference](docs/API.md) |
-| [**CLI Reference**](docs/CLI_REFERENCE.md) | [File Type Support](docs/USER_GUIDE.md#file-type-support) | |
+| Getting Started | Security | Reference |
+|----------------|----------|------------|
+| [**Quick Start**](docs/QUICK_START.md) | [Encryption & Security](docs/ENCRYPTION.md) | [CLI Reference](docs/CLI_REFERENCE.md) |
+| [**Installation**](docs/INSTALLATION.md) | [Trust & Code Signing](#️-security--trust-instructions) | [Configuration](docs/CONFIGURATION.md) |
+| [**User Guide**](docs/USER_GUIDE.md) | [PGP Key Setup](docs/CONFIGURATION.md#pgp-configuration) | [Troubleshooting](docs/USER_GUIDE.md#troubleshooting) |
 
 ## Key Features
 
@@ -182,6 +180,31 @@ cargo build --release
 ```
 
 [**Full Build Instructions →**](docs/INSTALLATION.md)
+
+## Troubleshooting
+
+### Common Issues
+
+**"Unidentified Developer" on macOS**
+- See [Security & Trust Instructions](#️-security--trust-instructions) above
+
+**"Windows protected your PC" on Windows**
+- Click "More info" then "Run anyway"
+- Or unblock the file in Properties
+
+**Permission denied on Linux**
+```bash
+chmod +x rust-r2-*  # Make executable
+```
+
+**Missing libraries on Linux**
+```bash
+# Debian/Ubuntu
+sudo apt-get install libgtk-3-0 libssl1.1
+
+# Fedora/RHEL
+sudo dnf install gtk3 openssl
+```
 
 ## Contributing
 
