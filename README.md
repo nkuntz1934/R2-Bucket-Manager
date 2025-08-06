@@ -19,19 +19,28 @@
 - **Linux Debian/Ubuntu:** Look for `Linux-Debian`
 - **Linux Fedora/RHEL:** Look for `Linux-Fedora`
 
-#### Automated Release System
-Our streamlined CI/CD pipeline automatically builds and releases when source code changes are detected:
+#### ⚠️ Security & Trust Instructions
 
-- **Smart Build Triggers** - Only builds when `src/`, `Cargo.toml`, or `Cargo.lock` changes
-- **Professional Naming** - Format: `rust-r2_v{version}_{date}_{platform}`
-- **Multi-Platform Support** - Simultaneous builds for all platforms
-- **Unified Releases** - All platform binaries in a single GitHub release
-- **Automatic Changelog** - Generated from recent commit messages
-- **SHA256 Checksums** - Included for security verification
+Since our binaries are not code-signed, you may need to manually trust them on your operating system:
 
-Example: `rust-r2_v0.1.0_20240806_macOS-ARM.tar.gz`
+#### macOS
+**"rust-r2 cannot be opened because the developer cannot be verified"**
+1. **Method 1:** Right-click the app and select "Open" (instead of double-clicking)
+2. **Method 2:** System Settings → Privacy & Security → scroll down and click "Open Anyway"
+3. **Method 3:** Terminal command: `xattr -cr rust-r2-*`
 
-#### Platform Support
+#### Windows
+**"Windows protected your PC"**
+1. Click "More info"
+2. Click "Run anyway"
+3. Or right-click the file → Properties → check "Unblock" → Apply
+
+#### Linux
+```bash
+chmod +x rust-r2-*  # Make executable
+```
+
+### Platform Support
 Pre-built binaries are automatically generated when source code changes:
 
 | Platform | Architecture | Build Status | Release Tag Pattern |
@@ -55,7 +64,7 @@ Pre-built binaries are automatically generated when source code changes:
 | Getting Started | Security | Reference |
 |----------------|----------|------------|
 | [**Quick Start**](docs/QUICK_START.md) | [Encryption & Security](docs/ENCRYPTION.md) | [CLI Reference](docs/CLI_REFERENCE.md) |
-| [**Installation**](docs/INSTALLATION.md) | [Trust & Code Signing](#️-security--trust-instructions) | [Configuration](docs/CONFIGURATION.md) |
+| [**Installation**](docs/INSTALLATION.md) | [Trust & Code Signing](#-security--trust-instructions) | [Configuration](docs/CONFIGURATION.md) |
 | [**User Guide**](docs/USER_GUIDE.md) | [PGP Key Setup](docs/CONFIGURATION.md#pgp-configuration) | [Troubleshooting](docs/USER_GUIDE.md#troubleshooting) |
 
 ## Key Features
@@ -138,24 +147,6 @@ Pre-built binaries are automatically generated when source code changes:
 
 [**Detailed Configuration Guide →**](docs/CONFIGURATION.md)
 
-## CI/CD Pipeline
-
-### Automated Build & Release
-Our GitHub Actions pipeline automatically handles the entire release process:
-
-1. **Smart Change Detection** - Monitors source files and only builds when needed
-2. **Parallel Platform Builds** - All platforms build simultaneously for faster releases
-3. **Unified Release Creation** - Single release with all platform binaries
-4. **Automatic Versioning** - Uses version from `Cargo.toml` with build date
-5. **Changelog Generation** - Automatically generated from commit history
-
-### Build Triggers
-The release pipeline activates when changes are pushed to:
-- `src/**` - Any source code modifications
-- `Cargo.toml` - Version or dependency updates
-- `Cargo.lock` - Locked dependency changes
-
-You can also manually trigger builds using the "Run workflow" button in GitHub Actions.
 
 ## Building from Source
 
@@ -194,7 +185,7 @@ cargo build --release
 ### Common Issues
 
 **"Unidentified Developer" on macOS**
-- See [Security & Trust Instructions](#️-security--trust-instructions) above
+- See [Security & Trust Instructions](#-security--trust-instructions) above
 
 **"Windows protected your PC" on Windows**
 - Click "More info" then "Run anyway"
@@ -226,11 +217,11 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ### Recent Updates (August 2024)
 - ✅ Professional CI/CD pipeline with automated releases
-- ✅ Multi-platform simultaneous builds
+- ✅ Individual platform-specific releases
 - ✅ Smart change detection to optimize build times
 - ✅ Cleaned repository - removed test scripts and artifacts
 - ✅ Professional release naming convention
-- ✅ Unified release system with all platforms in one release
+- ✅ Added comprehensive security trust instructions
 
 ## Links
 
