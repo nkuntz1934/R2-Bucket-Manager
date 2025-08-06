@@ -17,6 +17,8 @@ jobs:
   build-macos:
     name: Build macOS
     runs-on: macos-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         target:
@@ -26,6 +28,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get version and date
+        id: metadata
+        run: |
+          VERSION=$(grep "^version" Cargo.toml | head -1 | cut -d'"' -f2)
+          DATE=$(date +'%Y%m%d')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION, Date: $DATE"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -47,22 +58,51 @@ jobs:
           cargo build --release --target ${{ matrix.target }}
           echo "Build completed successfully"
 
-      - name: Prepare binaries
+      - name: Prepare release
+        id: prepare
         run: |
+          VERSION="${{ steps.metadata.outputs.version }}"
+          DATE="${{ steps.metadata.outputs.date }}"
+          
+          if [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
+            PLATFORM="macOS-Intel"
+          else
+            PLATFORM="macOS-ARM"
+          fi
+          
+          ARCHIVE_NAME="rust-r2_v${VERSION}_${DATE}_${PLATFORM}.tar.gz"
+          
           mkdir -p release
           cp target/${{ matrix.target }}/release/rust-r2-cli release/
           cp target/${{ matrix.target }}/release/rust-r2-gui release/
+          cp README.md LICENSE release/
           
-          # Create archive with target name
-          if [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
-            tar czf rust-r2-macOS-x86_64.tar.gz -C release .
-          else
-            tar czf rust-r2-macOS-aarch64.tar.gz -C release .
-          fi
+          tar czf "${ARCHIVE_NAME}" -C release .
+          
+          echo "archive_name=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+          echo "platform=${PLATFORM}" >> $GITHUB_OUTPUT
+          echo "Created archive: ${ARCHIVE_NAME}"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: rust-r2-macOS-${{ matrix.target }}
-          path: rust-r2-macOS-*.tar.gz
-
+          tag_name: v${{ steps.metadata.outputs.version }}-${{ steps.metadata.outputs.date }}-macOS-${{ matrix.target }}
+          name: macOS ${{ steps.prepare.outputs.platform }} - v${{ steps.metadata.outputs.version }} (Build ${{ steps.metadata.outputs.date }})
+          body: |
+            ## macOS ${{ steps.prepare.outputs.platform }} Build
+            
+            **Version:** ${{ steps.metadata.outputs.version }}
+            **Build Date:** ${{ steps.metadata.outputs.date }}
+            **Architecture:** ${{ matrix.target }}
+            
+            ### Installation
+            ```bash
+            tar -xzf ${{ steps.prepare.outputs.archive_name }}
+            ./rust-r2-gui  # For GUI
+            ./rust-r2-cli  # For CLI
+            ```
+          files: ${{ steps.prepare.outputs.archive_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

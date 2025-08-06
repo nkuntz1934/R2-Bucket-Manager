@@ -17,10 +17,21 @@ jobs:
   build-linux:
     name: Build for Debian/Ubuntu
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get version and date
+        id: metadata
+        run: |
+          VERSION=$(grep "^version" Cargo.toml | head -1 | cut -d'"' -f2)
+          DATE=$(date +'%Y%m%d')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION, Date: $DATE"
 
       - name: Install system dependencies
         run: |
@@ -54,42 +65,55 @@ jobs:
         run: |
           echo "Building for Debian/Ubuntu Linux x86_64"
           echo "Rust version: $(rustc --version)"
-          echo "Building without explicit target (native build)..."
           cargo build --release --verbose
           echo "Build completed successfully"
-          
-          # List the output
-          echo "Checking build output:"
-          ls -la target/release/
 
-      - name: Prepare binaries
+      - name: Prepare release
+        id: prepare
         run: |
+          VERSION="${{ steps.metadata.outputs.version }}"
+          DATE="${{ steps.metadata.outputs.date }}"
+          ARCHIVE_NAME="rust-r2_v${VERSION}_${DATE}_Linux-Debian-x64.tar.gz"
+          
           mkdir -p release
+          cp target/release/rust-r2-cli release/
+          cp target/release/rust-r2-gui release/
+          cp README.md LICENSE release/
           
-          # Copy binaries if they exist (from native target directory)
-          if [ -f "target/release/rust-r2-cli" ]; then
-            cp target/release/rust-r2-cli release/
-            echo "✓ Copied rust-r2-cli"
-          else
-            echo "⚠️ rust-r2-cli not found!"
-            exit 1
-          fi
+          tar czf "${ARCHIVE_NAME}" -C release .
           
-          if [ -f "target/release/rust-r2-gui" ]; then
-            cp target/release/rust-r2-gui release/
-            echo "✓ Copied rust-r2-gui"
-          else
-            echo "⚠️ rust-r2-gui not found!"
-            exit 1
-          fi
-          
-          # Create archive for Debian/Ubuntu
-          tar czf rust-r2-Linux-Debian-x86_64.tar.gz -C release .
-          echo "✓ Created archive: rust-r2-Linux-Debian-x86_64.tar.gz"
+          echo "archive_name=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+          echo "Created archive: ${ARCHIVE_NAME}"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: rust-r2-Linux-Debian-x86_64
-          path: rust-r2-Linux-Debian-x86_64.tar.gz
-
+          tag_name: v${{ steps.metadata.outputs.version }}-${{ steps.metadata.outputs.date }}-Linux-Debian
+          name: Linux Debian/Ubuntu - v${{ steps.metadata.outputs.version }} (Build ${{ steps.metadata.outputs.date }})
+          body: |
+            ## Linux Debian/Ubuntu Build
+            
+            **Version:** ${{ steps.metadata.outputs.version }}
+            **Build Date:** ${{ steps.metadata.outputs.date }}
+            **Architecture:** x86_64
+            **Compatible with:** Ubuntu 20.04+, Debian 10+
+            
+            ### Installation
+            ```bash
+            tar -xzf ${{ steps.prepare.outputs.archive_name }}
+            chmod +x rust-r2-*
+            ./rust-r2-gui  # For GUI
+            ./rust-r2-cli  # For CLI
+            ```
+            
+            ### Dependencies
+            Requires GTK3 and standard system libraries. Install with:
+            ```bash
+            sudo apt-get update
+            sudo apt-get install libgtk-3-0 libssl1.1
+            ```
+          files: ${{ steps.prepare.outputs.archive_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

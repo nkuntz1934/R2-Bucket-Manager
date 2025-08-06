@@ -15,12 +15,24 @@ env:
 
 jobs:
   build-windows:
-    name: Build Windows
+    name: Build Windows x64
     runs-on: windows-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get version and date
+        id: metadata
+        shell: powershell
+        run: |
+          $VERSION = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+          $DATE = Get-Date -Format "yyyyMMdd"
+          echo "version=$VERSION" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "date=$DATE" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "Version: $VERSION, Date: $DATE"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -38,20 +50,47 @@ jobs:
 
       - name: Build
         run: |
-          echo "Building for Windows x86_64"
+          echo "Building for Windows x64"
           cargo build --release --target x86_64-pc-windows-msvc
           echo "Build completed successfully"
 
-      - name: Prepare binaries
+      - name: Prepare release
+        id: prepare
+        shell: powershell
         run: |
-          mkdir release
-          copy target\x86_64-pc-windows-msvc\release\rust-r2-cli.exe release\
-          copy target\x86_64-pc-windows-msvc\release\rust-r2-gui.exe release\
-          Compress-Archive -Path release\* -DestinationPath rust-r2-Windows-x86_64.zip
+          $VERSION = "${{ steps.metadata.outputs.version }}"
+          $DATE = "${{ steps.metadata.outputs.date }}"
+          $ARCHIVE_NAME = "rust-r2_v${VERSION}_${DATE}_Windows-x64.zip"
+          
+          New-Item -ItemType Directory -Force -Path release
+          Copy-Item target\x86_64-pc-windows-msvc\release\rust-r2-cli.exe release\
+          Copy-Item target\x86_64-pc-windows-msvc\release\rust-r2-gui.exe release\
+          Copy-Item README.md release\
+          Copy-Item LICENSE release\
+          
+          Compress-Archive -Path release\* -DestinationPath $ARCHIVE_NAME
+          
+          echo "archive_name=$ARCHIVE_NAME" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "Created archive: $ARCHIVE_NAME"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: rust-r2-Windows-x86_64
-          path: rust-r2-Windows-x86_64.zip
-
+          tag_name: v${{ steps.metadata.outputs.version }}-${{ steps.metadata.outputs.date }}-Windows-x64
+          name: Windows x64 - v${{ steps.metadata.outputs.version }} (Build ${{ steps.metadata.outputs.date }})
+          body: |
+            ## Windows x64 Build
+            
+            **Version:** ${{ steps.metadata.outputs.version }}
+            **Build Date:** ${{ steps.metadata.outputs.date }}
+            **Architecture:** x86_64
+            
+            ### Installation
+            1. Download and extract the ZIP file
+            2. Run `rust-r2-gui.exe` for the GUI application
+            3. Run `rust-r2-cli.exe` from Command Prompt or PowerShell for CLI usage
+          files: ${{ steps.prepare.outputs.archive_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

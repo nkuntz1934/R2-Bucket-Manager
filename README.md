@@ -1,9 +1,9 @@
 # Rust R2 Tool
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Release Pipeline](https://github.com/SilentHeroes/rust-r2/actions/workflows/release.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/release.yml)
 [![Latest Release](https://img.shields.io/github/v/release/SilentHeroes/rust-r2)](https://github.com/SilentHeroes/rust-r2/releases/latest)
 [![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](https://github.com/SilentHeroes/rust-r2/releases)
+[![Build Status](https://img.shields.io/badge/builds-automated-green)](https://github.com/SilentHeroes/rust-r2/actions)
 
 **Enterprise-grade desktop application and CLI for Cloudflare R2 storage with end-to-end encryption and team collaboration features.**
 
