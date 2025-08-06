@@ -88,6 +88,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libssl-dev pkg-config libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libfontconfig1-dev libatk1.0-dev libgdk-pixbuf2-dev
 
+      - name: Setup macOS environment
+        if: runner.os == 'macOS'
+        run: |
+          echo "Setting up macOS build environment"
+          # Ensure we have the right SDKs for cross-compilation
+          rustup target add ${{ matrix.job.target }}
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -103,7 +110,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ matrix.job.target }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.job.target }}
+        run: |
+          echo "Building for ${{ matrix.job.target }}"
+          cargo build --release --target ${{ matrix.job.target }}
+          echo "Build completed"
 
       - name: Package (Windows)
         if: matrix.job.os == 'windows-latest'
@@ -130,8 +140,14 @@ jobs:
           NAME="rust-r2_v${VERSION}_${DATE}_${{ matrix.job.name }}"
           
           mkdir -p release
-          cp target/${{ matrix.job.target }}/release/rust-r2-cli release/ 2>/dev/null || true
-          cp target/${{ matrix.job.target }}/release/rust-r2-gui release/ 2>/dev/null || true
+          
+          # List what was built to debug
+          echo "Contents of target directory:"
+          ls -la target/${{ matrix.job.target }}/release/
+          
+          # Copy binaries
+          cp target/${{ matrix.job.target }}/release/rust-r2-cli release/
+          cp target/${{ matrix.job.target }}/release/rust-r2-gui release/
           cp README.md LICENSE release/
           
           tar czf "${NAME}.tar.gz" -C release .
