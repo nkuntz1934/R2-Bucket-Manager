@@ -12,6 +12,13 @@
 ### Latest Releases
 **[View All Releases →](https://github.com/SilentHeroes/rust-r2/releases)**
 
+⚠️ **Note:** Each platform has its own release. Look for releases tagged with your platform:
+- **macOS Intel:** Look for `macOS-x86_64-apple-darwin`
+- **macOS ARM:** Look for `macOS-aarch64-apple-darwin`  
+- **Windows:** Look for `Windows-x64`
+- **Linux Debian/Ubuntu:** Look for `Linux-Debian`
+- **Linux Fedora/RHEL:** Look for `Linux-Fedora`
+
 #### Automated Release System
 Our streamlined CI/CD pipeline automatically builds and releases when source code changes are detected:
 
@@ -27,12 +34,13 @@ Example: `rust-r2_v0.1.0_20240806_macOS-ARM.tar.gz`
 #### Platform Support
 Pre-built binaries are automatically generated when source code changes:
 
-| Platform | Architecture | Build Status | Download |
-|----------|--------------|--------------|----------|
-| **macOS** | Intel (x86_64) & Apple Silicon (ARM64) | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
-| **Windows** | x64 | [![Windows](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
-| **Linux (Debian/Ubuntu)** | x64 | [![Linux-Debian](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
-| **Linux (Fedora/RHEL)** | x64 | [![Linux-Fedora](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml) | [Latest Release](https://github.com/SilentHeroes/rust-r2/releases/latest) |
+| Platform | Architecture | Build Status | Release Tag Pattern |
+|----------|--------------|--------------|---------------------|
+| **macOS Intel** | x86_64 | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) | `*-macOS-x86_64-apple-darwin` |
+| **macOS ARM** | aarch64 (M1/M2) | [![macOS](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-macos.yml) | `*-macOS-aarch64-apple-darwin` |
+| **Windows** | x64 | [![Windows](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-windows.yml) | `*-Windows-x64` |
+| **Linux (Debian/Ubuntu)** | x64 | [![Linux-Debian](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-linux.yml) | `*-Linux-Debian` |
+| **Linux (Fedora/RHEL)** | x64 | [![Linux-Fedora](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/SilentHeroes/rust-r2/actions/workflows/build-fedora.yml) | `*-Linux-Fedora` |
 
 ## Quick Start
 
