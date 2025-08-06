@@ -1,16 +1,23 @@
 # Rust R2 Tool
 
-[![Release](https://img.shields.io/github/v/release/yourusername/rust-r2)](https://github.com/yourusername/rust-r2/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![macOS](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml)
-[![Windows](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml)
-[![Linux](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml)
+[![macOS Build](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml)
+[![Windows Build](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml)
+[![Linux Build](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml)
 
 **Secure, fast, cross-platform desktop app and CLI for Cloudflare R2 storage with end-to-end encryption.**
 
 ## Download
 
-**[Download Latest Release](https://github.com/yourusername/rust-r2/releases/latest)** - Pre-built binaries for Windows, macOS (Intel/ARM), and Linux
+Check the [Actions tab](https://github.com/yourusername/rust-r2/actions) for the latest builds, or download directly:
+
+| Platform | Status | Download |
+|----------|--------|----------|
+| **macOS** (Intel & ARM) | [![macOS](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml) | [View Builds](https://github.com/yourusername/rust-r2/actions/workflows/build-macos.yml) |
+| **Windows** (x64) | [![Windows](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml) | [View Builds](https://github.com/yourusername/rust-r2/actions/workflows/build-windows.yml) |
+| **Linux** (Debian/Ubuntu) | [![Linux](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml/badge.svg)](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml) | [View Builds](https://github.com/yourusername/rust-r2/actions/workflows/build-linux.yml) |
+
+**Note:** Replace `yourusername` in the URLs above with your actual GitHub username.
 
 ## Quick Start
 
@@ -134,11 +141,12 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Links
 
-- [Releases](https://github.com/yourusername/rust-r2/releases)
+- [GitHub Actions (Builds)](https://github.com/yourusername/rust-r2/actions)
 - [Issues](https://github.com/yourusername/rust-r2/issues)
-- [Discussions](https://github.com/yourusername/rust-r2/discussions)
 - [Cloudflare R2 Docs](https://developers.cloudflare.com/r2/)
 - [OpenPGP Standard](https://www.openpgp.org/)
+
+**Important:** Replace `yourusername` with your actual GitHub username in all URLs.
 
 ---
 
