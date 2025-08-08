@@ -2,6 +2,7 @@ mod config;
 mod crypto;
 mod r2_client;
 
+// R2 Bucket Manager - Enterprise Cloudflare R2 client
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use clap::{Parser, Subcommand};
