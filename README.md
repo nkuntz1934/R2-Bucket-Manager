@@ -6,6 +6,10 @@
 
 Enterprise Cloudflare R2 client with PGP encryption support. Native desktop GUI and CLI tools.
 
+**[How-To Guide](docs/HOW-TO.md)** | **[Technical Docs](docs/TECHNICAL.md)** | **[Encryption](docs/ENCRYPTION.md)** | **[Configuration](docs/CONFIGURATION.md)** | **[CLI Reference](docs/CLI_REFERENCE.md)**
+
+![rust-r2 GUI Screenshot](docs/images/gui-screenshot.png)
+
 ## Installation
 
 ### Binary Releases
@@ -93,10 +97,11 @@ Create `config.json`:
 
 ## Documentation
 
-- [Configuration Guide](docs/CONFIGURATION.md)
-- [CLI Reference](docs/CLI_REFERENCE.md)
-- [Encryption Details](docs/ENCRYPTION.md)
-- [User Guide](docs/USER_GUIDE.md)
+- **[How-To Guide](docs/HOW-TO.md)** - Complete usage guide with examples
+- **[Technical Docs](docs/TECHNICAL.md)** - Architecture and implementation details
+- **[Configuration](docs/CONFIGURATION.md)** - Detailed configuration options
+- **[CLI Reference](docs/CLI_REFERENCE.md)** - Command-line interface reference
+- **[Encryption](docs/ENCRYPTION.md)** - PGP encryption implementation
 
 ## Security
 
