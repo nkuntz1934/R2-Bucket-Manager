@@ -779,7 +779,7 @@ impl UploadTab {
                     }
 
                     if let Err(e) = result {
-                        eprintln!("Failed to upload {}: {}", file.relative_path, e);
+                        // Failed to upload file
                     }
 
                     completed_files += 1;
@@ -866,7 +866,7 @@ impl UploadTab {
                         state.last_refresh = Some(std::time::Instant::now());
                     }
                     Err(e) => {
-                        eprintln!("Failed to refresh folders: {}", e);
+                        // Failed to refresh folders
                         state.folders.clear();
                     }
                 }

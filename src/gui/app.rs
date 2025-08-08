@@ -52,7 +52,7 @@ impl R2App {
         let config_path = std::path::Path::new("config.json");
         if config_path.exists() {
             if let Ok(config) = Config::from_file(config_path) {
-                println!("Auto-loaded config.json from current directory");
+                // Auto-loaded config.json from current directory
                 app_state.config = config;
                 app_state.status_message = "Auto-loaded config.json".to_string();
             }
@@ -76,7 +76,7 @@ impl R2App {
                     if let Ok(entry) = entry {
                         let path = entry.path();
                         if path.extension().and_then(|s| s.to_str()) == Some(ext) {
-                            println!("Found keyring file: {}", path.display());
+                            // Found keyring file
                             if config_tab.try_load_keyring(&path) {
                                 keyring_loaded = true;
                             }
@@ -89,7 +89,7 @@ impl R2App {
             config_tab.auto_connect();
             
             if keyring_loaded {
-                println!("Keyring files loaded automatically");
+                // Keyring files loaded automatically
             }
         }
         

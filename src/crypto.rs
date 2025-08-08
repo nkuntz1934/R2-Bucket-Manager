@@ -193,7 +193,7 @@ impl PgpHandler {
             start = start + pos + end_marker.len();
         }
 
-        println!("Found {} key blocks in file", begin_positions.len());
+        // Process key blocks in file
 
         // Extract and parse each key block
         for i in 0..begin_positions.len() {
@@ -211,27 +211,21 @@ impl PgpHandler {
                                     .iter()
                                     .any(|k| k.fingerprint == key_info.fingerprint)
                                 {
-                                    println!(
-                                        "  Block {}: Loaded key for {} <{}> (Key ID: {:X})",
-                                        i + 1,
-                                        key_info.name,
-                                        key_info.email,
-                                        key.primary_key.key_id()
-                                    );
+                                    // Key loaded successfully
                                     self.public_keys.push(key);
                                     self.key_info.push(key_info.clone());
                                     loaded_keys.push(key_info);
                                 } else {
-                                    println!("  Block {}: Skipped duplicate key", i + 1);
+                                    // Skipped duplicate key
                                 }
                             }
-                            Err(e) => {
-                                println!("  Block {}: Failed to extract key info: {}", i + 1, e);
+                            Err(_) => {
+                                // Failed to extract key info
                             }
                         }
                     }
-                    Err(e) => {
-                        println!("  Block {}: Failed to parse key: {}", i + 1, e);
+                    Err(_) => {
+                        // Failed to parse key block
                     }
                 }
             }
@@ -239,7 +233,7 @@ impl PgpHandler {
 
         // If position-based extraction didn't work, try fallback methods
         if loaded_keys.is_empty() {
-            println!("Position-based extraction didn't work, trying from_armor_many");
+            // Try alternative parsing method
             // Try to parse as armored keyring with from_armor_many
             if let Ok((parsed_keys_iter, _)) =
                 SignedPublicKey::from_armor_many(Cursor::new(key_data))
@@ -252,7 +246,7 @@ impl PgpHandler {
                                 .iter()
                                 .any(|k| k.fingerprint == key_info.fingerprint)
                             {
-                                println!("  Loaded key for {} <{}>", key_info.name, key_info.email);
+                                // Key loaded successfully
                                 self.public_keys.push(key);
                                 self.key_info.push(key_info.clone());
                                 loaded_keys.push(key_info);
@@ -263,7 +257,7 @@ impl PgpHandler {
             } else if let Ok((single_key, _)) =
                 SignedPublicKey::from_armor_single(Cursor::new(key_data))
             {
-                println!("Trying single key parsing");
+                // Try single key parsing
                 // Fallback to single key parsing
                 if let Ok(key_info) = Self::extract_key_info(&single_key) {
                     self.public_keys.push(single_key);
@@ -276,7 +270,7 @@ impl PgpHandler {
         if loaded_keys.is_empty() {
             Err(anyhow!("No valid keys found in keyring"))
         } else {
-            println!("Total loaded: {} keys", loaded_keys.len());
+            // Keys loaded successfully
             Ok(loaded_keys)
         }
     }
@@ -360,25 +354,24 @@ impl PgpHandler {
                 // Try to parse this private key block
                 match SignedSecretKey::from_armor_single(Cursor::new(key_block.as_bytes())) {
                     Ok((secret_key, _)) => {
-                        println!("Found private key");
+                        // Found private key
 
                         // Try to unlock if passphrase provided
                         if let Some(pass) = passphrase {
                             let password_fn = || pass.to_string();
                             match secret_key.unlock(password_fn, |_| Ok(())) {
-                                Ok(_) => println!("Successfully unlocked private key with passphrase"),
-                                Err(e) => println!("Warning: Could not unlock private key with provided passphrase: {}", e),
+                                Ok(_) => { /* Private key unlocked */ },
+                                Err(_) => { /* Could not unlock private key */ },
                             }
                         }
 
-                        let key_id = secret_key.key_id();
                         self.secret_key = Some(secret_key);
                         private_key_loaded = true;
-                        println!("Loaded private key from keyring (Key ID: {:X})", key_id);
+                        // Private key loaded from keyring
                         break; // Only load the first private key
                     }
-                    Err(e) => {
-                        println!("Failed to parse private key block {}: {}", i + 1, e);
+                    Err(_) => {
+                        // Failed to parse private key block
                     }
                 }
             }
@@ -439,16 +432,13 @@ impl PgpHandler {
     pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>> {
         // Check if the data is actually encrypted
         if !Self::is_pgp_encrypted(encrypted_data) {
-            println!("Warning: Data does not appear to be PGP encrypted, returning as-is");
+            // Data does not appear to be PGP encrypted
             return Ok(encrypted_data.to_vec());
         }
 
         // First try with the pgp crate
         if let Some(ref secret_key) = self.secret_key {
-            println!(
-                "Attempting decryption with pgp crate (secret key ID: {:X})",
-                secret_key.key_id()
-            );
+            // Attempting decryption with pgp crate
 
             // Try to parse as armored first, then fall back to binary
             let message_result = if encrypted_data.starts_with(b"-----BEGIN PGP MESSAGE-----") {
@@ -465,11 +455,11 @@ impl PgpHandler {
 
                 if let Ok((decrypted, _)) = decrypt_result {
                     if let Ok(Some(content)) = decrypted.get_content() {
-                        println!("Successfully decrypted with pgp crate");
+                        // Successfully decrypted
                         return Ok(content.clone());
                     }
                 } else {
-                    println!("pgp crate decryption failed, trying GPG fallback...");
+                    // Try GPG fallback
                 }
             }
         }
@@ -481,19 +471,10 @@ impl PgpHandler {
     fn decrypt_with_gpg(&self, encrypted_data: &[u8]) -> Result<Vec<u8>> {
         use std::process::Command;
 
-        println!("Using GPG command-line for decryption");
+        // Using GPG command-line for decryption
 
-        // Debug: Check what kind of data we received
-        if encrypted_data.len() < 100 {
-            println!("Debug: Encrypted data size: {} bytes", encrypted_data.len());
-            println!(
-                "Debug: First bytes: {:?}",
-                &encrypted_data[..encrypted_data.len().min(50)]
-            );
-        } else {
-            println!("Debug: Encrypted data size: {} bytes", encrypted_data.len());
-            println!("Debug: First 50 bytes: {:?}", &encrypted_data[..50]);
-        }
+        // Check data size for proper handling
+        // (Debug logging removed for security)
 
         // Check if this looks like PGP data
         let is_armored = encrypted_data.starts_with(b"-----BEGIN PGP MESSAGE-----");
@@ -508,7 +489,7 @@ impl PgpHandler {
 
         // If it doesn't look like PGP data, don't try to decrypt
         if !is_armored && !is_binary {
-            println!("Warning: Data does not appear to be PGP encrypted");
+            // Data does not appear to be PGP encrypted
             return Err(anyhow!("Data does not appear to be PGP encrypted"));
         }
 

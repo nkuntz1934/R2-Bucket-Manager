@@ -383,7 +383,7 @@ impl BucketTab {
                                         state.objects.retain(|obj| obj.key != key);
                                     }
                                     Err(e) => {
-                                        eprintln!("Failed to delete {}: {}", key, e);
+                                        // Failed to delete object
                                         failed += 1;
                                     }
                                 }

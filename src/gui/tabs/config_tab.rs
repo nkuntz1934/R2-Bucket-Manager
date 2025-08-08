@@ -79,7 +79,7 @@ impl ConfigTab {
             
             match temp_handler.load_keyring(&key_data, pass_opt) {
                 Ok((public_keys, private_key_loaded)) => {
-                    println!("Loaded {} public keys from {}", public_keys.len(), path.display());
+                    // Loaded public keys from file
                     
                     // Add to team keys
                     for key_info in public_keys {
@@ -93,15 +93,15 @@ impl ConfigTab {
                     if private_key_loaded {
                         self.private_key_loaded_from_keyring = true;
                         self.secret_key_path = path.to_string_lossy().to_string();
-                        println!("Also loaded private key from keyring");
+                        // Also loaded private key from keyring
                     }
                     
                     // Update the PGP handler in state
                     self.update_pgp_handler_in_state();
                     return true;
                 }
-                Err(e) => {
-                    println!("Failed to load keyring from {}: {}", path.display(), e);
+                Err(_) => {
+                    // Failed to load keyring
                 }
             }
         }
@@ -115,7 +115,7 @@ impl ConfigTab {
            !self.account_id.is_empty() && 
            !self.bucket_name.is_empty() {
             
-            println!("Auto-connecting to R2...");
+            // Auto-connecting to R2
             
             let state = self.state.clone();
             let runtime = self.runtime.clone();
@@ -148,19 +148,19 @@ impl ConfigTab {
                                 app_state.r2_client = Some(Arc::new(client));
                                 app_state.is_connected = true;
                                 app_state.status_message = "Auto-connected to R2!".to_string();
-                                println!("Successfully auto-connected to R2");
+                                // Successfully auto-connected to R2
                             }
-                            Err(e) => {
+                            Err(_) => {
                                 let mut app_state = state.lock().unwrap();
-                                app_state.status_message = format!("Auto-connect failed: {}", e);
-                                println!("Auto-connect failed: {}", e);
+                                app_state.status_message = "Auto-connect failed".to_string();
+                                // Auto-connect failed
                             }
                         }
                     }
-                    Err(e) => {
+                    Err(_) => {
                         let mut app_state = state.lock().unwrap();
-                        app_state.status_message = format!("Failed to create R2 client: {}", e);
-                        println!("Failed to create R2 client: {}", e);
+                        app_state.status_message = "Failed to create R2 client".to_string();
+                        // Failed to create R2 client
                     }
                 }
             });
@@ -191,11 +191,7 @@ impl ConfigTab {
                 {
                     if let Ok(key_data) = std::fs::read(path) {
                         // Try to load both public and private keys from the file
-                        println!(
-                            "Processing file: {} ({} bytes)",
-                            path.display(),
-                            key_data.len()
-                        );
+                        // Processing key file
 
                         // Create a temporary PgpHandler to load the keyring
                         let mut temp_handler = rust_r2::crypto::PgpHandler::new();
@@ -206,7 +202,7 @@ impl ConfigTab {
                         };
                         match temp_handler.load_keyring(&key_data, pass_opt) {
                             Ok((public_keys, private_key_loaded)) => {
-                                println!("Found {} public keys in file", public_keys.len());
+                                // Found public keys in file
 
                                 // Add public keys
                                 for key_info in &public_keys {
@@ -217,16 +213,10 @@ impl ConfigTab {
                                         .any(|(_, info)| info.fingerprint == key_info.fingerprint);
 
                                     if !already_exists {
-                                        println!(
-                                            "  Adding: {} <{}>",
-                                            key_info.name, key_info.email
-                                        );
+                                        // Adding key to list
                                         self.team_keys.push((path_str.clone(), key_info.clone()));
                                     } else {
-                                        println!(
-                                            "  Skipping duplicate: {} <{}>",
-                                            key_info.name, key_info.email
-                                        );
+                                        // Skipping duplicate key
                                     }
                                 }
 
@@ -234,7 +224,7 @@ impl ConfigTab {
                                 if private_key_loaded {
                                     self.private_key_loaded_from_keyring = true;
                                     self.secret_key_path = path_str.clone();
-                                    println!("Also loaded private key from keyring");
+                                    // Also loaded private key from keyring
                                 }
 
                                 // Update the AppState's pgp_handler immediately if we loaded any keys
@@ -242,8 +232,8 @@ impl ConfigTab {
                                     self.update_pgp_handler_in_state();
                                 }
                             }
-                            Err(e) => {
-                                eprintln!("Failed to parse keys from {}: {}", path.display(), e);
+                            Err(_) => {
+                                // Failed to parse keys
                             }
                         }
                     }
@@ -454,7 +444,7 @@ impl ConfigTab {
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!("Failed to parse keys from {}: {}", path.display(), e);
+                                    // Failed to parse keys
                                 }
                             }
                         }
@@ -512,7 +502,7 @@ impl ConfigTab {
                                         }
                                     }
                                     Err(e) => {
-                                        eprintln!("Failed to parse keys from {}: {}", path.display(), e);
+                                        // Failed to parse keys
                                     }
                                 }
                             }

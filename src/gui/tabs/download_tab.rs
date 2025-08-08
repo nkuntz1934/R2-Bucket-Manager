@@ -816,7 +816,7 @@ impl DownloadTab {
                     // Create parent directories if needed
                     if let Some(parent) = save_path.parent() {
                         if let Err(e) = std::fs::create_dir_all(parent) {
-                            eprintln!("Failed to create directory {:?}: {}", parent, e);
+                            // Failed to create directory
                             failed_count += 1;
                             completed_files += 1;
                             continue;
@@ -868,7 +868,7 @@ impl DownloadTab {
                     match result {
                         Ok(_) => success_count += 1,
                         Err(e) => {
-                            eprintln!("Failed to download {}: {}", obj.key, e);
+                            // Failed to download file
                             failed_count += 1;
                         }
                     }
