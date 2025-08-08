@@ -5,7 +5,7 @@
 ### Installation
 
 #### From Binary Release
-1. Download the latest release for your platform from [GitHub Releases](https://github.com/SilentHeroes/rust-r2/releases)
+1. Download the latest release for your platform from [GitHub Releases](https://github.com/nkuntz1934/R2-Bucket-Manager/releases)
 2. Extract the archive
 3. Make executable (Linux/macOS): `chmod +x rust-r2-*`
 4. Bypass security warnings:
@@ -15,8 +15,8 @@
 
 #### From Source
 ```bash
-git clone https://github.com/SilentHeroes/rust-r2.git
-cd rust-r2/rust-r2
+git clone https://github.com/nkuntz1934/R2-Bucket-Manager.git
+cd R2-Bucket-Manager
 cargo build --release
 # Binaries in target/release/
 ```
