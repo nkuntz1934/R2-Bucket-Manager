@@ -103,15 +103,25 @@ jobs:
             **Compatible with:** Fedora 36+, RHEL 8+, CentOS 8+, Rocky Linux 8+
             
             ### Installation
+            
+            1. **Download and extract:**
             ```bash
             tar -xzf ${{ steps.prepare.outputs.archive_name }}
+            ```
+            
+            2. **Make executable (Required on Linux):**
+            ```bash
             chmod +x rust-r2-*
+            ```
+            
+            3. **Run the application:**
+            ```bash
             ./rust-r2-gui  # For GUI
             ./rust-r2-cli  # For CLI
             ```
             
             ### Dependencies
-            Requires GTK3 and standard system libraries. Install with:
+            If you encounter missing library errors, install:
             ```bash
             sudo dnf install gtk3 openssl
             ```

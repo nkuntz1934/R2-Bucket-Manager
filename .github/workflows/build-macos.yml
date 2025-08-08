@@ -96,8 +96,28 @@ jobs:
             **Architecture:** ${{ matrix.target }}
             
             ### Installation
+            
+            1. **Download and extract:**
             ```bash
             tar -xzf ${{ steps.prepare.outputs.archive_name }}
+            ```
+            
+            2. **IMPORTANT: Bypass macOS Security Warning**
+            
+            Since the binaries are not code-signed, you'll see:
+            > "rust-r2 cannot be opened because the developer cannot be verified"
+            
+            **Fix this by running:**
+            ```bash
+            xattr -cr rust-r2-*
+            ```
+            
+            **Alternative methods:**
+            - Right-click the app and select "Open" (instead of double-clicking)
+            - Go to System Settings → Privacy & Security → click "Open Anyway"
+            
+            3. **Run the application:**
+            ```bash
             ./rust-r2-gui  # For GUI
             ./rust-r2-cli  # For CLI
             ```

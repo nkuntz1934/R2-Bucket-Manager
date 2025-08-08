@@ -99,15 +99,25 @@ jobs:
             **Compatible with:** Ubuntu 20.04+, Debian 10+
             
             ### Installation
+            
+            1. **Download and extract:**
             ```bash
             tar -xzf ${{ steps.prepare.outputs.archive_name }}
+            ```
+            
+            2. **Make executable (Required on Linux):**
+            ```bash
             chmod +x rust-r2-*
+            ```
+            
+            3. **Run the application:**
+            ```bash
             ./rust-r2-gui  # For GUI
             ./rust-r2-cli  # For CLI
             ```
             
             ### Dependencies
-            Requires GTK3 and standard system libraries. Install with:
+            If you encounter missing library errors, install:
             ```bash
             sudo apt-get update
             sudo apt-get install libgtk-3-0 libssl1.1

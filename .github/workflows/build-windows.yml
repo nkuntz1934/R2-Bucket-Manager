@@ -86,9 +86,26 @@ jobs:
             **Architecture:** x86_64
             
             ### Installation
-            1. Download and extract the ZIP file
-            2. Run `rust-r2-gui.exe` for the GUI application
-            3. Run `rust-r2-cli.exe` from Command Prompt or PowerShell for CLI usage
+            
+            1. **Download and extract the ZIP file**
+            
+            2. **IMPORTANT: Bypass Windows Security Warning**
+            
+            When you first run the app, Windows will show:
+            > "Windows protected your PC - Microsoft Defender SmartScreen prevented an unrecognized app from starting"
+            
+            **To fix this:**
+            - Click **"More info"**
+            - Click **"Run anyway"**
+            
+            **Alternative method:**
+            - Right-click the .exe file → Properties
+            - Check **"Unblock"** at the bottom
+            - Click **Apply** → **OK**
+            
+            3. **Run the application:**
+            - Double-click `rust-r2-gui.exe` for the GUI application
+            - Run `rust-r2-cli.exe` from Command Prompt or PowerShell for CLI usage
           files: ${{ steps.prepare.outputs.archive_name }}
           draft: false
           prerelease: false
