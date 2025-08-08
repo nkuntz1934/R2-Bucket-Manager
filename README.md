@@ -1,4 +1,4 @@
-# rust-r2
+# R2-Bucket-Manager
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-green)](https://github.com/SilentHeroes/rust-r2/actions)
