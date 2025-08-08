@@ -1,8 +1,8 @@
 # rust-r2
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-green)](https://github.com/SilentHeroes/rust-r2/actions)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](https://github.com/SilentHeroes/rust-r2/releases)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-green)](https://github.com/nkuntz1934/R2-Bucket-Manager/actions)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](https://github.com/nkuntz1934/R2-Bucket-Manager/releases)
 
 Enterprise Cloudflare R2 client with PGP encryption support. Native desktop GUI and CLI tools.
 
@@ -14,7 +14,7 @@ Enterprise Cloudflare R2 client with PGP encryption support. Native desktop GUI 
 
 ### Binary Releases
 
-Download platform-specific binaries from [Releases](https://github.com/SilentHeroes/rust-r2/releases).
+Download platform-specific binaries from [Releases](https://github.com/nkuntz1934/R2-Bucket-Manager/releases).
 
 **macOS**: `xattr -cr rust-r2-*` (bypass Gatekeeper)  
 **Windows**: Properties → Unblock or "More info" → "Run anyway"  
@@ -23,8 +23,8 @@ Download platform-specific binaries from [Releases](https://github.com/SilentHer
 ### Build from Source
 
 ```bash
-git clone https://github.com/SilentHeroes/rust-r2.git
-cd rust-r2/rust-r2
+git clone https://github.com/nkuntz1934/R2-Bucket-Manager.git
+cd R2-Bucket-Manager
 cargo build --release
 ```
 
@@ -116,4 +116,4 @@ MIT - See [LICENSE](LICENSE)
 
 ## Support
 
-[Issues](https://github.com/SilentHeroes/rust-r2/issues) | [Releases](https://github.com/SilentHeroes/rust-r2/releases)
+[Issues](https://github.com/nkuntz1934/R2-Bucket-Manager/issues) | [Releases](https://github.com/nkuntz1934/R2-Bucket-Manager/releases)
