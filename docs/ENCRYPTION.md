@@ -6,19 +6,19 @@ Rust R2 provides end-to-end encryption for your files using industry-standard Op
 
 ## Security Features
 
-### 🔐 OpenPGP Encryption
+### OpenPGP Encryption
 - **Standard**: OpenPGP (RFC 4880) compliant encryption
 - **Library**: Uses the [`pgp`](https://crates.io/crates/pgp) Rust crate
 - **Algorithm**: RSA with configurable key sizes (2048-bit default, 4096-bit recommended)
 - **Armor Format**: Base64 ASCII-armored output for text compatibility
 
-### 🛡️ Transport Security
+### Transport Security
 - **HTTPS Only**: All connections to Cloudflare R2 use TLS 1.2+
 - **Certificate Validation**: Full SSL/TLS certificate verification
 - **No Downgrade**: Enforces HTTPS, no fallback to HTTP
 - **API Security**: Uses AWS Signature Version 4 for request signing
 
-### 🔑 Key Management
+### Key Management
 - **Local Keys**: PGP keys stored locally, never transmitted
 - **Passphrase Support**: Optional passphrase protection for private keys
 - **Key Separation**: Public keys for encryption, private keys for decryption
@@ -110,19 +110,19 @@ export R2_SECRET_ACCESS_KEY="..."
 
 ### Protected Against
 
-✅ **Data Interception**: TLS prevents eavesdropping
-✅ **Data at Rest**: PGP encryption protects stored files
-✅ **Man-in-the-Middle**: Certificate validation prevents MITM
-✅ **API Tampering**: Request signing ensures integrity
-✅ **Unauthorized Access**: API keys required for all operations
+**Data Interception**: TLS prevents eavesdropping
+**Data at Rest**: PGP encryption protects stored files
+**Man-in-the-Middle**: Certificate validation prevents MITM
+**API Tampering**: Request signing ensures integrity
+**Unauthorized Access**: API keys required for all operations
 
 ### Not Protected Against
 
-❌ **Compromised Endpoint**: If your machine is compromised
-❌ **Weak Keys**: Using keys smaller than 2048-bit
-❌ **Key Theft**: If private keys are stolen
-❌ **Metadata**: File names and sizes are not encrypted
-❌ **Traffic Analysis**: Connection patterns are visible
+**Compromised Endpoint**: If your machine is compromised
+**Weak Keys**: Using keys smaller than 2048-bit
+**Key Theft**: If private keys are stolen
+**Metadata**: File names and sizes are not encrypted
+**Traffic Analysis**: Connection patterns are visible
 
 ## Compliance & Standards
 
