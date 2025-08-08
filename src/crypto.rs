@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use pgp::composed::{Deserializable, Message, SignedPublicKey, SignedSecretKey};
 use pgp::crypto::sym::SymmetricKeyAlgorithm;
-use pgp::types::{KeyTrait, PublicKeyTrait, SecretKeyTrait};
+use pgp::types::{KeyTrait, SecretKeyTrait};
 use pgp::ArmorOptions;
 use std::io::Cursor;
 
@@ -9,6 +9,7 @@ use std::io::Cursor;
 pub struct KeyInfo {
     pub name: String,
     pub email: String,
+    #[allow(dead_code)]
     pub key_id: String,
     pub fingerprint: String,
 }
@@ -79,12 +80,14 @@ impl PgpHandler {
         })
     }
 
+    #[allow(dead_code)]
     pub fn get_key_info_from_bytes(key_data: &[u8]) -> Result<KeyInfo> {
         let (public_key, _) = SignedPublicKey::from_armor_single(Cursor::new(key_data))
             .context("Failed to parse public key")?;
         Self::extract_key_info(&public_key)
     }
 
+    #[allow(dead_code)]
     pub fn get_all_keys_from_bytes(key_data: &[u8]) -> Result<Vec<KeyInfo>> {
         let mut keys = Vec::new();
 
@@ -278,6 +281,7 @@ impl PgpHandler {
         }
     }
 
+    #[allow(dead_code)]
     pub fn clear_public_keys(&mut self) {
         self.public_keys.clear();
         self.key_info.clear();
@@ -287,6 +291,7 @@ impl PgpHandler {
         self.public_keys.len()
     }
 
+    #[allow(dead_code)]
     pub fn get_loaded_keys(&self) -> &[KeyInfo] {
         &self.key_info
     }
@@ -354,7 +359,7 @@ impl PgpHandler {
 
                 // Try to parse this private key block
                 match SignedSecretKey::from_armor_single(Cursor::new(key_block.as_bytes())) {
-                    Ok((mut secret_key, _)) => {
+                    Ok((secret_key, _)) => {
                         println!("Found private key");
 
                         // Try to unlock if passphrase provided

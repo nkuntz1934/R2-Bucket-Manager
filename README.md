@@ -205,23 +205,19 @@ sudo apt-get install libgtk-3-0 libssl1.1
 sudo dnf install gtk3 openssl
 ```
 
-## Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## Project Status
+## Features
 
-### Recent Updates (August 2024)
+### Recent Updates
+- ✅ Auto-load configuration from current directory
+- ✅ Enhanced PGP encryption with .pgp extension handling
+- ✅ Improved GUI performance and stability
 - ✅ Professional CI/CD pipeline with automated releases
 - ✅ Individual platform-specific releases
 - ✅ Smart change detection to optimize build times
-- ✅ Cleaned repository - removed test scripts and artifacts
-- ✅ Professional release naming convention
-- ✅ Added comprehensive security trust instructions
 
 ## Links
 

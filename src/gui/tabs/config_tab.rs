@@ -55,6 +55,117 @@ impl ConfigTab {
             private_key_loaded_from_keyring: false,
         }
     }
+    
+    pub fn load_from_current_config(&mut self) {
+        // Update internal fields from the current config in AppState
+        let config = self.state.lock().unwrap().config.clone();
+        self.access_key_id = config.r2.access_key_id;
+        self.secret_access_key = config.r2.secret_access_key;
+        self.account_id = config.r2.account_id;
+        self.bucket_name = config.r2.bucket_name;
+        self.secret_key_path = config.pgp.secret_key_path.unwrap_or_default();
+        self.passphrase = config.pgp.passphrase.unwrap_or_default();
+    }
+    
+    pub fn try_load_keyring(&mut self, path: &std::path::Path) -> bool {
+        if let Ok(key_data) = std::fs::read(path) {
+            // Try to load both public and private keys from the file
+            let mut temp_handler = rust_r2::crypto::PgpHandler::new();
+            let pass_opt = if self.passphrase.is_empty() {
+                None
+            } else {
+                Some(self.passphrase.as_str())
+            };
+            
+            match temp_handler.load_keyring(&key_data, pass_opt) {
+                Ok((public_keys, private_key_loaded)) => {
+                    println!("Loaded {} public keys from {}", public_keys.len(), path.display());
+                    
+                    // Add to team keys
+                    for key_info in public_keys {
+                        let path_str = path.to_string_lossy().to_string();
+                        // Check for duplicates
+                        if !self.team_keys.iter().any(|(_, info)| info.fingerprint == key_info.fingerprint) {
+                            self.team_keys.push((path_str.clone(), key_info));
+                        }
+                    }
+                    
+                    if private_key_loaded {
+                        self.private_key_loaded_from_keyring = true;
+                        self.secret_key_path = path.to_string_lossy().to_string();
+                        println!("Also loaded private key from keyring");
+                    }
+                    
+                    // Update the PGP handler in state
+                    self.update_pgp_handler_in_state();
+                    return true;
+                }
+                Err(e) => {
+                    println!("Failed to load keyring from {}: {}", path.display(), e);
+                }
+            }
+        }
+        false
+    }
+    
+    pub fn auto_connect(&mut self) {
+        // Only auto-connect if we have R2 credentials
+        if !self.access_key_id.is_empty() && 
+           !self.secret_access_key.is_empty() && 
+           !self.account_id.is_empty() && 
+           !self.bucket_name.is_empty() {
+            
+            println!("Auto-connecting to R2...");
+            
+            let state = self.state.clone();
+            let runtime = self.runtime.clone();
+            
+            // Update config in state
+            {
+                let mut app_state = state.lock().unwrap();
+                app_state.config.r2.access_key_id = self.access_key_id.clone();
+                app_state.config.r2.secret_access_key = self.secret_access_key.clone();
+                app_state.config.r2.account_id = self.account_id.clone();
+                app_state.config.r2.bucket_name = self.bucket_name.clone();
+            }
+            
+            runtime.spawn(async move {
+                let config = state.lock().unwrap().config.clone();
+                
+                match rust_r2::r2_client::R2Client::new(
+                    config.r2.access_key_id,
+                    config.r2.secret_access_key,
+                    config.r2.account_id,
+                    config.r2.bucket_name.clone(),
+                )
+                .await
+                {
+                    Ok(client) => {
+                        // Try to list objects to verify connection
+                        match client.list_objects(None).await {
+                            Ok(_) => {
+                                let mut app_state = state.lock().unwrap();
+                                app_state.r2_client = Some(Arc::new(client));
+                                app_state.is_connected = true;
+                                app_state.status_message = "Auto-connected to R2!".to_string();
+                                println!("Successfully auto-connected to R2");
+                            }
+                            Err(e) => {
+                                let mut app_state = state.lock().unwrap();
+                                app_state.status_message = format!("Auto-connect failed: {}", e);
+                                println!("Auto-connect failed: {}", e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        let mut app_state = state.lock().unwrap();
+                        app_state.status_message = format!("Failed to create R2 client: {}", e);
+                        println!("Failed to create R2 client: {}", e);
+                    }
+                }
+            });
+        }
+    }
 
     pub fn show(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.heading("Configuration");
@@ -170,13 +281,23 @@ impl ConfigTab {
                     .spacing([40.0, 4.0])
                     .show(ui, |ui| {
                         ui.label("Access Key ID:");
-                        ui.text_edit_singleline(&mut self.access_key_id);
+                        if ui.text_edit_singleline(&mut self.access_key_id).changed() {
+                            // Reset connection when credentials change
+                            let mut state = self.state.lock().unwrap();
+                            state.is_connected = false;
+                            state.r2_client = None;
+                        }
                         ui.end_row();
 
                         ui.label("Secret Access Key:");
                         ui.horizontal(|ui| {
                             if self.show_secret {
-                                ui.text_edit_singleline(&mut self.secret_access_key);
+                                if ui.text_edit_singleline(&mut self.secret_access_key).changed() {
+                                    // Reset connection when credentials change
+                                    let mut state = self.state.lock().unwrap();
+                                    state.is_connected = false;
+                                    state.r2_client = None;
+                                }
                             } else {
                                 let masked = "*".repeat(self.secret_access_key.len().min(20));
                                 ui.add_enabled(
@@ -198,11 +319,21 @@ impl ConfigTab {
                         ui.end_row();
 
                         ui.label("Account ID:");
-                        ui.text_edit_singleline(&mut self.account_id);
+                        if ui.text_edit_singleline(&mut self.account_id).changed() {
+                            // Reset connection when credentials change
+                            let mut state = self.state.lock().unwrap();
+                            state.is_connected = false;
+                            state.r2_client = None;
+                        }
                         ui.end_row();
 
                         ui.label("Bucket Name:");
-                        ui.text_edit_singleline(&mut self.bucket_name);
+                        if ui.text_edit_singleline(&mut self.bucket_name).changed() {
+                            // Reset connection when credentials change
+                            let mut state = self.state.lock().unwrap();
+                            state.is_connected = false;
+                            state.r2_client = None;
+                        }
                         ui.end_row();
                     });
             });
@@ -530,7 +661,10 @@ impl ConfigTab {
 
                     let mut state = self.state.lock().unwrap();
                     state.config = config;
-                    state.status_message = format!("Config loaded from {:?}", path);
+                    // Clear the existing connection when loading new config
+                    state.r2_client = None;
+                    state.is_connected = false;
+                    state.status_message = format!("Config loaded from {:?}. Please test connection.", path);
                 }
                 Err(e) => {
                     let mut state = self.state.lock().unwrap();

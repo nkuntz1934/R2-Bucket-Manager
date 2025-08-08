@@ -655,17 +655,24 @@ impl DownloadTab {
         let recent_downloads = self.recent_downloads.clone();
 
         std::thread::spawn(move || {
+            // Extract just the filename from the object key (remove path)
+            let base_filename = object_key
+                .rsplit('/')
+                .next()
+                .unwrap_or(&object_key)
+                .to_string();
+            
             // Determine the suggested filename
             let suggested_filename =
-                if decrypt && (object_key.ends_with(".gpg") || object_key.ends_with(".pgp")) {
+                if decrypt && (base_filename.ends_with(".gpg") || base_filename.ends_with(".pgp")) {
                     // Remove the encryption extension for decrypted files
-                    if object_key.ends_with(".gpg") {
-                        object_key[..object_key.len() - 4].to_string()
+                    if base_filename.ends_with(".gpg") {
+                        base_filename[..base_filename.len() - 4].to_string()
                     } else {
-                        object_key[..object_key.len() - 4].to_string()
+                        base_filename[..base_filename.len() - 4].to_string()
                     }
                 } else {
-                    object_key.clone()
+                    base_filename
                 };
 
             // Show file dialog

@@ -87,7 +87,14 @@ async fn main() -> Result<()> {
     let config = if let Some(config_path) = cli.config {
         config::Config::from_file(&config_path)?
     } else {
-        config::Config::from_env()?
+        // Try to load config.json from current directory first
+        let default_config = std::path::Path::new("config.json");
+        if default_config.exists() {
+            info!("Auto-loading config.json from current directory");
+            config::Config::from_file(default_config)?
+        } else {
+            config::Config::from_env()?
+        }
     };
 
     let r2_client = r2_client::R2Client::new(

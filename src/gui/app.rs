@@ -46,14 +46,58 @@ pub struct R2App {
 
 impl R2App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let state = Arc::new(Mutex::new(AppState::default()));
+        let mut app_state = AppState::default();
+        
+        // Try to auto-load config.json from current directory
+        let config_path = std::path::Path::new("config.json");
+        if config_path.exists() {
+            if let Ok(config) = Config::from_file(config_path) {
+                println!("Auto-loaded config.json from current directory");
+                app_state.config = config;
+                app_state.status_message = "Auto-loaded config.json".to_string();
+            }
+        }
+        
+        let state = Arc::new(Mutex::new(app_state));
         let runtime = Arc::new(Runtime::new().expect("Failed to create Tokio runtime"));
 
+        let mut config_tab = ConfigTab::new(state.clone(), runtime.clone());
+        
+        // If we loaded a config, update the ConfigTab and try to auto-load keyrings
+        if config_path.exists() {
+            config_tab.load_from_current_config();
+            
+            // Look for keyring files in current directory
+            let keyring_extensions = vec!["asc", "gpg", "pgp", "key"];
+            let mut keyring_loaded = false;
+            
+            for ext in keyring_extensions {
+                for entry in std::fs::read_dir(".").unwrap_or_else(|_| std::fs::read_dir("/dev/null").unwrap()) {
+                    if let Ok(entry) = entry {
+                        let path = entry.path();
+                        if path.extension().and_then(|s| s.to_str()) == Some(ext) {
+                            println!("Found keyring file: {}", path.display());
+                            if config_tab.try_load_keyring(&path) {
+                                keyring_loaded = true;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Auto-connect if we have credentials
+            config_tab.auto_connect();
+            
+            if keyring_loaded {
+                println!("Keyring files loaded automatically");
+            }
+        }
+        
         Self {
             state: state.clone(),
             runtime: runtime.clone(),
             active_tab: Tab::Config,
-            config_tab: ConfigTab::new(state.clone(), runtime.clone()),
+            config_tab,
             upload_tab: UploadTab::new(state.clone(), runtime.clone()),
             download_tab: DownloadTab::new(state.clone(), runtime.clone()),
             bucket_tab: BucketTab::new(state.clone(), runtime.clone()),

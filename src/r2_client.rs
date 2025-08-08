@@ -77,7 +77,7 @@ impl R2Client {
         let canonical_request = format!(
             "{}\n{}\n{}\n{}\n\n{}\n{}",
             method.as_str(),
-            path_only,
+            path_only,  // Path is already properly encoded by the caller
             query_string,
             canonical_headers,
             signed_headers,
@@ -115,8 +115,13 @@ impl R2Client {
         Ok(())
     }
 
+
     pub async fn download_object(&self, key: &str) -> Result<Bytes> {
-        let path = format!("/{}/{}", self.bucket_name, key);
+        // Encode the key segments for both URL and canonical path
+        let encoded_key = key.split('/').map(|s| urlencoding::encode(s)).collect::<Vec<_>>().join("/");
+        // Build the path with encoded key for signing
+        let path = format!("/{}/{}", self.bucket_name, encoded_key);
+        // Build the URL
         let url = format!("{}{}", self.endpoint, path);
 
         let mut headers = HeaderMap::new();
@@ -151,7 +156,11 @@ impl R2Client {
     }
 
     pub async fn upload_object(&self, key: &str, data: Bytes) -> Result<()> {
-        let path = format!("/{}/{}", self.bucket_name, key);
+        // Encode the key segments for both URL and canonical path
+        let encoded_key = key.split('/').map(|s| urlencoding::encode(s)).collect::<Vec<_>>().join("/");
+        // Build the path with encoded key for signing
+        let path = format!("/{}/{}", self.bucket_name, encoded_key);
+        // Build the URL
         let url = format!("{}{}", self.endpoint, path);
 
         let mut headers = HeaderMap::new();
@@ -243,7 +252,11 @@ impl R2Client {
     }
 
     pub async fn delete_object(&self, key: &str) -> Result<()> {
-        let path = format!("/{}/{}", self.bucket_name, key);
+        // Encode the key segments for both URL and canonical path
+        let encoded_key = key.split('/').map(|s| urlencoding::encode(s)).collect::<Vec<_>>().join("/");
+        // Build the path with encoded key for signing
+        let path = format!("/{}/{}", self.bucket_name, encoded_key);
+        // Build the URL
         let url = format!("{}{}", self.endpoint, path);
 
         let mut headers = HeaderMap::new();
@@ -276,12 +289,12 @@ impl R2Client {
 #[allow(dead_code)]
 mod urlencoding {
     pub fn encode(s: &str) -> String {
-        s.chars()
-            .map(|c| {
-                if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' || c == '~' {
-                    c.to_string()
+        s.bytes()
+            .map(|byte| {
+                if byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_' || byte == b'.' || byte == b'~' {
+                    char::from(byte).to_string()
                 } else {
-                    format!("%{:02X}", c as u8)
+                    format!("%{:02X}", byte)
                 }
             })
             .collect()

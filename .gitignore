@@ -20,9 +20,15 @@ Thumbs.db
 
 # Configuration files with secrets
 config.json
+config_*.json
+!config.example.json
+!config.*.example.json
 *.key
 *.pgp
 *.gpg
+*.asc
+keyring*
+!*.example.*
 
 # Environment files
 .env
@@ -35,6 +41,13 @@ config.json
 *.tmp
 temp/
 tmp/
+
+# Test files
+test*.sh
+test*.txt
+*.xlsx
+*.docx
+test_*/
 
 # Backup files
 *.backup

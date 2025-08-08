@@ -232,7 +232,7 @@ impl UploadTab {
 
                     // If a folder is selected, prepend it to the object key
                     if let Some(ref folder) = self.selected_bucket_folder {
-                        self.object_key = format!("{}{}", folder, filename);
+                        self.object_key = format!("{}/{}", folder, filename);
                     } else {
                         self.object_key = filename;
                     }
@@ -283,7 +283,7 @@ impl UploadTab {
                             // Update object key with folder prefix
                             if let Some(ref path) = self.selected_file {
                                 if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                                    self.object_key = format!("{}{}", folder, filename);
+                                    self.object_key = format!("{}/{}", folder, filename);
                                 }
                             }
                         }
@@ -322,7 +322,7 @@ impl UploadTab {
                     // Update object key with custom folder
                     if let Some(ref path) = self.selected_file {
                         if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                            self.object_key = format!("{}{}", self.folder_prefix, filename);
+                            self.object_key = format!("{}/{}", self.folder_prefix, filename);
                         }
                     }
                 } else {
@@ -583,6 +583,15 @@ impl UploadTab {
                     *upload_progress.lock().unwrap() = 0.1;
                     ctx.request_repaint();
 
+                    // Add .pgp extension if encrypting and not already present
+                    let final_object_key = if encrypt && !object_key.ends_with(".pgp") {
+                        format!("{}.pgp", object_key)
+                    } else {
+                        object_key.clone()
+                    };
+                    
+                    let upload_key = final_object_key.clone();
+                    
                     let result = async {
                         let file_data = std::fs::read(&file_path)?;
 
@@ -615,7 +624,7 @@ impl UploadTab {
                         *upload_progress.lock().unwrap() = 0.7;
                         ctx.request_repaint();
 
-                        client.upload_object(&object_key, final_data).await?;
+                        client.upload_object(&upload_key, final_data).await?;
 
                         // Set progress to 100% after upload
                         *upload_progress.lock().unwrap() = 1.0;
@@ -627,7 +636,7 @@ impl UploadTab {
 
                     // Record the upload result
                     let upload_record = UploadRecord {
-                        object_key: object_key.clone(),
+                        object_key: final_object_key,
                         file_path: file_path_str,
                         encrypted: encrypt,
                         timestamp: Local::now(),
@@ -716,11 +725,16 @@ impl UploadTab {
                     ctx.request_repaint();
 
                     // Create object key with folder prefix
-                    let object_key = if folder_prefix.is_empty() {
+                    let mut object_key = if folder_prefix.is_empty() {
                         file.relative_path.clone()
                     } else {
                         format!("{}/{}", folder_prefix, file.relative_path)
                     };
+                    
+                    // Add .pgp extension if encrypting and not already present
+                    if encrypt && !object_key.ends_with(".pgp") {
+                        object_key.push_str(".pgp");
+                    }
 
                     let result = async {
                         let file_data = std::fs::read(&file.path)?;
@@ -840,7 +854,7 @@ impl UploadTab {
                                 let parts: Vec<&str> =
                                     folder.split('/').filter(|s| !s.is_empty()).collect();
                                 for i in 1..=parts.len() {
-                                    let partial = parts[..i].join("/") + "/";
+                                    let partial = parts[..i].join("/");
                                     folders.insert(partial);
                                 }
                             }

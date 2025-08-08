@@ -479,6 +479,14 @@ impl BucketTab {
             app.status_message = format!("Preparing to download {}...", key);
         }
 
+        // Extract just the filename from the key for the save dialog
+        let mut filename = key.rsplit('/').next().unwrap_or(&key).to_string();
+        
+        // If it's a .pgp file, suggest removing the extension for the saved file
+        if filename.ends_with(".pgp") || filename.ends_with(".gpg") {
+            filename = filename[..filename.len() - 4].to_string();
+        }
+        
         // Clone everything we need before the dialog
         let state = self.state.clone();
         let runtime = self.runtime.clone();
@@ -487,27 +495,71 @@ impl BucketTab {
         // Show file dialog in a non-blocking way
         std::thread::spawn(move || {
             // File dialog must be called from a thread
-            if let Some(path) = rfd::FileDialog::new().set_file_name(&key_clone).save_file() {
+            if let Some(path) = rfd::FileDialog::new().set_file_name(&filename).save_file() {
                 // Update status
                 {
                     let mut app = state.lock().unwrap();
                     app.status_message = format!("Downloading {}...", key_clone);
                 }
 
-                // Now spawn the actual download task
-                let state_clone = state.clone();
-                let key_for_download = key_clone.clone();
-
-                runtime.block_on(async {
-                    if let Some(client) = state_clone.lock().unwrap().r2_client.clone() {
+                // Get the client before spawning
+                let client = state.lock().unwrap().r2_client.clone();
+                
+                if let Some(client) = client {
+                    let state_clone = state.clone();
+                    let key_for_download = key_clone.clone();
+                    let path_string = path.to_string_lossy().to_string();
+                    
+                    // Use handle() to get a sendable handle to the runtime
+                    let handle = runtime.handle().clone();
+                    
+                    handle.spawn(async move {
                         match client.download_object(&key_for_download).await {
                             Ok(data) => {
-                                // Write file in blocking context
-                                match std::fs::write(&path, data) {
-                                    Ok(_) => {
+                                // Check if it's encrypted and auto-decrypt if we have keys
+                                let is_encrypted = key_for_download.ends_with(".pgp") || 
+                                                  key_for_download.ends_with(".gpg") ||
+                                                  rust_r2::crypto::PgpHandler::is_pgp_encrypted(&data);
+                                
+                                let final_data = if is_encrypted {
+                                    // Try to decrypt
+                                    let pgp_handler = state_clone.lock().unwrap().pgp_handler.clone();
+                                    let handler = pgp_handler.lock().unwrap();
+                                    
+                                    if handler.has_secret_key() {
+                                        match handler.decrypt(&data) {
+                                            Ok(decrypted) => {
+                                                let mut app_state = state_clone.lock().unwrap();
+                                                app_state.status_message = 
+                                                    format!("✓ Downloaded and decrypted: {}", key_for_download);
+                                                decrypted
+                                            }
+                                            Err(_) => {
+                                                // Couldn't decrypt, save encrypted
+                                                let mut app_state = state_clone.lock().unwrap();
+                                                app_state.status_message = 
+                                                    format!("⚠ Downloaded encrypted (no key): {}", key_for_download);
+                                                data.to_vec()
+                                            }
+                                        }
+                                    } else {
+                                        // No secret key, save encrypted
                                         let mut app_state = state_clone.lock().unwrap();
-                                        app_state.status_message =
-                                            format!("✓ Downloaded: {}", key_for_download);
+                                        app_state.status_message = 
+                                            format!("⚠ Downloaded encrypted (no key): {}", key_for_download);
+                                        data.to_vec()
+                                    }
+                                } else {
+                                    let mut app_state = state_clone.lock().unwrap();
+                                    app_state.status_message =
+                                        format!("✓ Downloaded: {}", key_for_download);
+                                    data.to_vec()
+                                };
+                                
+                                // Write file
+                                match std::fs::write(&path_string, &final_data) {
+                                    Ok(_) => {
+                                        // Status already set above
                                     }
                                     Err(e) => {
                                         let mut app_state = state_clone.lock().unwrap();
@@ -522,8 +574,11 @@ impl BucketTab {
                                     format!("✗ Download failed for {}: {}", key_for_download, e);
                             }
                         }
-                    }
-                });
+                    });
+                } else {
+                    let mut app = state.lock().unwrap();
+                    app.status_message = "No R2 client available".to_string();
+                }
             } else {
                 // User cancelled
                 let mut app = state.lock().unwrap();
